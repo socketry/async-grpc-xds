@@ -27,7 +27,7 @@ Gem::Specification.new do |spec|
 	spec.required_ruby_version = ">= 3.3"
 
 	spec.add_dependency "async", ">= 2.38.0"
-	spec.add_dependency "async-grpc", "~> 0.6"
+	spec.add_dependency "async-grpc", "~> 0.7"
 	spec.add_dependency "async-http"
 	spec.add_dependency "google-protobuf"
 	spec.add_dependency "protocol-grpc", "~> 0.11.0"
