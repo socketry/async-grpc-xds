@@ -25,6 +25,7 @@ services:
     working_dir: /code
     command: bundle exec ruby xds/backend_server.rb
     environment:
+      - BUNDLE_WITHOUT=maintenance
       - PORT=50051
       - SERVICE_NAME=myservice
       - BACKEND_ID=backend-1
@@ -44,6 +45,7 @@ services:
     working_dir: /code
     command: bundle exec ruby xds/backend_server.rb
     environment:
+      - BUNDLE_WITHOUT=maintenance
       - PORT=50052
       - SERVICE_NAME=myservice
       - BACKEND_ID=backend-2
@@ -63,6 +65,7 @@ services:
     working_dir: /code
     command: bundle exec ruby xds/backend_server.rb
     environment:
+      - BUNDLE_WITHOUT=maintenance
       - PORT=50053
       - SERVICE_NAME=myservice
       - BACKEND_ID=backend-3
@@ -80,6 +83,7 @@ services:
     working_dir: /code
     command: bash -c "bundle install && bundle exec sus xds/test"
     environment:
+      - BUNDLE_WITHOUT=maintenance
       - CONSOLE_OUTPUT=XTerm
       - COVERAGE=${COVERAGE}
       - XDS_SERVER_URI=xds-control-plane:18000
