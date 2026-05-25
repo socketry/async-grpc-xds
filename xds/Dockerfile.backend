@@ -1,7 +1,8 @@
 FROM ruby:latest
 
 WORKDIR /app
-ENV BUNDLE_WITHOUT=maintenance
+ENV BUNDLE_GEMFILE=/app/gems.rb \
+    BUNDLE_WITHOUT=maintenance
 
 # Install dependencies
 RUN apt-get update && apt-get install -y \

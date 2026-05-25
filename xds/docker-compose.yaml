@@ -20,9 +20,6 @@ services:
     build:
       context: ..
       dockerfile: xds/Dockerfile.backend
-    volumes:
-      - ../:/code
-    working_dir: /code
     command: bundle exec ruby xds/backend_server.rb
     environment:
       - BUNDLE_WITHOUT=maintenance
@@ -40,9 +37,6 @@ services:
     build:
       context: ..
       dockerfile: xds/Dockerfile.backend
-    volumes:
-      - ../:/code
-    working_dir: /code
     command: bundle exec ruby xds/backend_server.rb
     environment:
       - BUNDLE_WITHOUT=maintenance
@@ -60,9 +54,6 @@ services:
     build:
       context: ..
       dockerfile: xds/Dockerfile.backend
-    volumes:
-      - ../:/code
-    working_dir: /code
     command: bundle exec ruby xds/backend_server.rb
     environment:
       - BUNDLE_WITHOUT=maintenance
@@ -83,6 +74,7 @@ services:
     working_dir: /code
     command: bash -c "bundle install && bundle exec sus xds/test"
     environment:
+      - BUNDLE_GEMFILE=/code/gems.rb
       - BUNDLE_WITHOUT=maintenance
       - CONSOLE_OUTPUT=XTerm
       - COVERAGE=${COVERAGE}
