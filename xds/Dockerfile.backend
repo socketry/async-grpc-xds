@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy gemfile, gemspec, and minimal lib files needed for gemspec.
-COPY gems.rb gems.locked *.gemspec ./
+COPY gems.rb *.gemspec ./
 COPY lib/async/grpc/xds/version.rb lib/async/grpc/xds/version.rb
 RUN bundle install
 
