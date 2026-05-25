@@ -1,0 +1,5 @@
+.git
+.bundle
+.ruby-lsp
+coverage
+gems.locked

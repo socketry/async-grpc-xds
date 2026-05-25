@@ -1,0 +1,6 @@
+/.bundle/
+/.ruby-lsp/
+/coverage/
+/gems.locked
+/*.gem
+/.DS_Store
