@@ -7,6 +7,7 @@ services:
       dockerfile: Dockerfile.control-plane
     ports:
       - "18000:18000"
+      - "18001:18001"
     environment:
       - UPSTREAM=backend-1:50051,backend-2:50052,backend-3:50053
     healthcheck:
@@ -78,6 +79,7 @@ services:
       - BUNDLE_WITHOUT=maintenance
       - CONSOLE_OUTPUT=XTerm
       - COVERAGE=${COVERAGE}
+      - XDS_ADMIN_URI=http://xds-control-plane:18001
       - XDS_SERVER_URI=xds-control-plane:18000
       - XDS_ENDPOINT_SCHEME=http
     depends_on:

@@ -109,22 +109,21 @@ module Async
 							loop do
 								begin
 									create_and_run_ads_stream(task)
-									break
 								rescue Async::Stop
 									raise
 								rescue => error
 									Console.error(self, error)
-									
-									@mutex.synchronize do
-										@grpc_client&.close
-										@grpc_client = nil
-										@ads_stream = nil
-										@stream_ready_promise = Async::Promise.new
-									end
-									
-									sleep(backoff)
-									backoff = [backoff * 2, 60].min
 								end
+								
+								@mutex.synchronize do
+									@grpc_client&.close
+									@grpc_client = nil
+									@ads_stream = nil
+									@stream_ready_promise = Async::Promise.new
+								end
+								
+								sleep(backoff)
+								backoff = [backoff * 2, 60].min
 							end
 						end
 					end
