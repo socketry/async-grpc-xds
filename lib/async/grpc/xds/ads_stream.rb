@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Released under the MIT License.
-# Copyright, 2025-2026, by Samuel Williams.
+# Copyright, 2026, by Samuel Williams.
 
 require "async"
 require "async/grpc/client"
@@ -23,33 +23,33 @@ module Async
 					def discovery_response(response, stream)
 					end
 				end
-
+				
 				def initialize(client, node, delegate:)
 					@client = client
 					@node = node
 					@delegate = delegate
 					@body = nil
 				end
-
+				
 				# Send a DiscoveryRequest on the stream. Call from within discovery_response to send ACKs.
 				# @parameter request [Envoy::Service::Discovery::V3::DiscoveryRequest] The request to send
 				def send(request)
 					@body&.write(request)
 				end
-
+				
 				# Run the ADS stream. Blocks until the stream completes or errors.
 				# @parameter initial [Object | Array | Nil] Initial message(s) to send (defaults to node-only request if nil/empty)
 				def run(initial: nil)
 					service = Envoy::Service::Discovery::V3::AggregatedDiscoveryService.new(
 						"envoy.service.discovery.v3.AggregatedDiscoveryService"
 					)
-
+					
 					initial = Array(initial).any? ? initial : [Envoy::Service::Discovery::V3::DiscoveryRequest.new(node: @node)]
-
+					
 					@client.invoke(service, :StreamAggregatedResources, nil, initial: initial) do |body, readable_body|
 						@body = body
 						@delegate.stream_opened(self) if @delegate.respond_to?(:stream_opened)
-
+						
 						begin
 							readable_body.each do |response|
 								@delegate.discovery_response(response, self)

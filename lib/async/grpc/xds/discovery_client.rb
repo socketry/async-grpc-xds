@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Released under the MIT License.
-# Copyright, 2025-2026, by Samuel Williams.
+# Copyright, 2026, by Samuel Williams.
 
 require "async"
 require "async/http/client"
@@ -30,7 +30,7 @@ module Async
 				CLUSTER_TYPE = "type.googleapis.com/envoy.config.cluster.v3.Cluster"
 				ENDPOINT_TYPE = "type.googleapis.com/envoy.config.endpoint.v3.ClusterLoadAssignment"
 				SECRET_TYPE = "type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.Secret"
-
+				
 				# Initialize xDS discovery client
 				# @parameter server_config [Hash] xDS server configuration from bootstrap
 				# @parameter node [Hash] Node information (id, cluster, metadata, locality)
@@ -49,7 +49,7 @@ module Async
 					@ads_stream = nil  # ADSStream instance when connected (owns stream state)
 					@stream_ready_promise = nil  # Resolved when stream_opened runs
 				end
-
+				
 				# Subscribe to resource type using ADS
 				# (Aggregated Discovery Service - single stream for all types)
 				# @parameter type_url [String] Resource type URL
@@ -64,10 +64,10 @@ module Async
 							callback: block
 						}
 					end
-
+					
 					# Ensure ADS stream is running
 					ensure_stream_running
-
+					
 					# Wait for stream to be ready (event-driven, no polling)
 					promise = @stream_ready_promise
 					if promise && !promise.completed?
@@ -77,13 +77,13 @@ module Async
 							# Stream didn't open in time; send_discovery_request will no-op if @ads_stream is nil
 						end
 					end
-
+					
 					send_discovery_request(type_url, resource_names) if @ads_stream
-
+					
 					# Return the stream task (already running)
 					@stream_task
 				end
-
+				
 				# Close xDS discovery client
 				def close
 					@mutex.synchronize do
@@ -96,13 +96,13 @@ module Async
 						@stream_ready_promise = nil
 					end
 				end
-
+				
 			private
-
+				
 				def ensure_stream_running
 					@mutex.synchronize do
 						return if @stream_task&.running?
-
+						
 						@stream_ready_promise = Async::Promise.new
 						@stream_task = Async do |task|
 							backoff = 5
@@ -114,14 +114,14 @@ module Async
 									raise
 								rescue => error
 									Console.error(self, error)
-
+									
 									@mutex.synchronize do
 										@grpc_client&.close
 										@grpc_client = nil
 										@ads_stream = nil
 										@stream_ready_promise = Async::Promise.new
 									end
-
+									
 									sleep(backoff)
 									backoff = [backoff * 2, 60].min
 								end
@@ -129,7 +129,7 @@ module Async
 						end
 					end
 				end
-
+				
 				def create_and_run_ads_stream(task)
 					# Create gRPC client
 					server_uri = @server_uri
@@ -142,37 +142,37 @@ module Async
 					endpoint = Async::HTTP::Endpoint.parse(server_uri, protocol: Async::HTTP::Protocol::HTTP2)
 					http_client = Async::HTTP::Client.new(endpoint)
 					grpc_client = Async::GRPC::Client.new(http_client)
-
+					
 					@mutex.synchronize{@grpc_client = grpc_client}
-
+					
 					# ADSStream owns the stream; we act as delegate receiving discovery_response events
 					ads_stream = ADSStream.new(grpc_client, @node, delegate: self)
 					ads_stream.run(initial: build_initial_requests)
 				end
-
+				
 			# ADSStream::Delegate interface - must be public for ADSStream to call
 			public
-
+				
 				def stream_opened(stream)
 					@mutex.synchronize{@ads_stream = stream}
 					@stream_ready_promise&.resolve(stream)
 				end
-
+				
 				def stream_closed(stream)
 					@mutex.synchronize{@ads_stream = nil}
 				end
-
+				
 				def discovery_response(response, stream)
 					process_response(response, stream)
 				end
-
+				
 			private
-
+				
 				def send_discovery_request(type_url, resource_names)
 					@mutex.synchronize do
 						stream = @ads_stream
 						return unless stream
-
+						
 						request = Envoy::Service::Discovery::V3::DiscoveryRequest.new(
 							version_info: @versions[type_url] || "",
 							node: @node,
@@ -186,7 +186,7 @@ module Async
 					Console.error(self, error)
 					raise
 				end
-
+				
 				def build_initial_requests
 					# Build discovery requests for all active subscriptions.
 					# If no subscriptions exist, return minimal request with node info so the server
@@ -195,7 +195,7 @@ module Async
 					@mutex.synchronize do
 						subscriptions_copy = @subscriptions.dup
 					end
-
+					
 					if subscriptions_copy.empty?
 						Console.info(self){"Building initial DiscoveryRequest (no subscriptions yet)"}
 						[Envoy::Service::Discovery::V3::DiscoveryRequest.new(node: @node)]
@@ -212,49 +212,49 @@ module Async
 						end
 					end
 				end
-
+				
 				def process_response(response, stream)
 					type_url = response.type_url
 					Console.debug(self, "Processing response:", type_url: type_url)
-
+					
 					callback = nil
 					resources = nil
 					resource_names = nil
-
+					
 					@mutex.synchronize do
-							subscription = @subscriptions[type_url]
-							unless subscription
-								Console.warn(self, "No subscription found!", type_url: type_url)
-								return
-							end
-
+						subscription = @subscriptions[type_url]
+						unless subscription
+							Console.warn(self, "No subscription found!", type_url: type_url)
+							return
+						end
+						
 						# Update version and nonce
 						@versions[type_url] = response.version_info
 						@nonces[type_url] = response.nonce
-
+						
 						# Deserialize resources (skip failed; callback receives only valid resources)
 						resources = response.resources.filter_map do |any_resource|
 							deserialize_resource(any_resource, type_url)
 						end
-
+						
 						# Capture for use outside mutex (avoid deadlock)
 						callback = subscription[:callback]
 						resource_names = subscription[:resource_names]
 					end
-
+					
 					# Call callback outside mutex
 					if callback
 						callback.call(resources)
 					else
 						Console.warn(self, "No callback found!", type_url: type_url)
 					end
-
+					
 					# Send ACK (acknowledge receipt)
 					@mutex.synchronize do
 						send_ack(type_url, resource_names, stream)
 					end
 				end
-
+				
 				def send_ack(type_url, resource_names, stream)
 					request = Envoy::Service::Discovery::V3::DiscoveryRequest.new(
 						version_info: @versions[type_url] || "",
@@ -267,7 +267,7 @@ module Async
 				rescue => error
 					Console.warn(self, "Failed to send ACK: #{error.message}")
 				end
-
+				
 				def deserialize_resource(any_resource, type_url)
 					# Deserialize google.protobuf.Any to appropriate resource type
 					# Based on type_url, decode the value to the correct protobuf message
@@ -295,7 +295,7 @@ module Async
 						any_resource
 					end
 				end
-
+				
 				def build_node_proto(node_info)
 					# Build envoy.config.core.v3.Node protobuf
 					Envoy::Config::Core::V3::Node.new(
@@ -305,11 +305,11 @@ module Async
 						locality: node_info[:locality] ? build_locality_proto(node_info[:locality]) : nil
 					)
 				end
-
+				
 				def build_metadata_struct(metadata_hash)
 					# Convert hash to google.protobuf.Struct
 					return nil if metadata_hash.empty?
-
+					
 					fields = {}
 					metadata_hash.each do |key, value|
 						fields[key.to_s] = case value
@@ -323,10 +323,10 @@ module Async
 							Google::Protobuf::Value.new(string_value: value.to_s)
 						end
 					end
-
+					
 					Google::Protobuf::Struct.new(fields: fields)
 				end
-
+				
 				def build_locality_proto(locality_hash)
 					# Build envoy.config.core.v3.Locality protobuf
 					Envoy::Config::Core::V3::Locality.new(
@@ -335,7 +335,7 @@ module Async
 						sub_zone: locality_hash[:sub_zone] || ""
 					)
 				end
-
+				
 				def build_node_info
 					# Build node identification for xDS server
 					# Based on envoy.config.core.v3.Node
@@ -346,7 +346,7 @@ module Async
 						locality: nil
 					}
 				end
-
+				
 				def generate_node_id
 					# Generate unique node ID
 					"#{Socket.gethostname}-#{Process.pid}-#{SecureRandom.hex(4)}"

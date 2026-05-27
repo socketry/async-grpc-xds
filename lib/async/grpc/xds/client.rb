@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Released under the MIT License.
-# Copyright, 2025-2026, by Samuel Williams.
+# Copyright, 2026, by Samuel Williams.
 
 require "async"
 require "async/http/client"
@@ -21,14 +21,14 @@ module Async
 			class Client < Protocol::HTTP::Middleware
 				# Raised when xDS configuration cannot be loaded
 				ConfigurationError = Context::ConfigurationError
-
+				
 				# Raised when no endpoints are available
 				class NoEndpointsError < StandardError
 				end
-
+				
 				# Raised when cluster configuration cannot be reloaded
 				ReloadError = Context::ReloadError
-
+				
 				# Create a new xDS client
 				# @parameter service_name [String] Target service name (e.g., "myservice")
 				# @parameter bootstrap [Hash, String, nil] Bootstrap config (hash, file path, or nil for default)
@@ -39,13 +39,13 @@ module Async
 					@bootstrap = load_bootstrap(bootstrap)
 					@headers = headers
 					@options = options
-
+					
 					@context = Context.new(@bootstrap, node: node || @bootstrap[:node])
 					@load_balancer = nil
 					@clients = {}  # Cache clients per endpoint (like ClusterClient caches node.client)
 					@mutex = Mutex.new
 				end
-
+				
 				# Resolve endpoints lazily (like SentinelClient.resolve_address)
 				# @returns [Array<Async::HTTP::Endpoint>] Available endpoints
 				def resolve_endpoints
@@ -53,36 +53,36 @@ module Async
 						unless @load_balancer
 							# Discover cluster via CDS
 							cluster = @context.discover_cluster(@service_name)
-
+							
 							# Discover endpoints via EDS
 							endpoints = @context.discover_endpoints(cluster)
-
+							
 							raise NoEndpointsError, "No endpoints discovered for #{@service_name}" if endpoints.empty?
-
+							
 							# Create load balancer
 							@load_balancer = LoadBalancer.new(cluster, endpoints)
-
+							
 							# Set load balancer reference in context for endpoint updates
 							@context.load_balancer = @load_balancer
 						end
-
+						
 						@load_balancer.healthy_endpoints
 					end
 				rescue Context::ReloadError => error
 					raise NoEndpointsError, "No endpoints discovered for #{@service_name}", cause: error
 				end
-
+				
 				# Get a client for making calls (like ClusterClient.client_for)
 				# Resolves endpoints lazily and picks one via load balancer
 				# @returns [Array(Async::GRPC::Client, Async::HTTP::Endpoint)] Client and endpoint for request tracking
 				def client_for_call
 					endpoints = resolve_endpoints
 					raise NoEndpointsError, "No endpoints available for #{@service_name}" if endpoints.empty?
-
+					
 					# Pick endpoint via load balancer
 					endpoint = @load_balancer.pick
 					raise NoEndpointsError, "No healthy endpoints available" unless endpoint
-
+					
 					# Cache client per endpoint (like ClusterClient caches node.client)
 					client = @clients[endpoint] ||= begin
 						http_client = Async::HTTP::Client.new(endpoint, **@options)
@@ -90,7 +90,7 @@ module Async
 					end
 					[client, endpoint]
 				end
-
+				
 				# Implement Protocol::HTTP::Middleware interface
 				# This allows XDS::Client to be used anywhere Async::GRPC::Client is used
 				# @parameter request [Protocol::HTTP::Request] The HTTP request
@@ -104,31 +104,31 @@ module Async
 						# Handle endpoint changes (like ClusterClient handles MOVED/ASK)
 						if error.status_code == Protocol::GRPC::Status::UNAVAILABLE
 							Console.warn(self, error)
-
+							
 							# Invalidate cache, reload configuration
 							invalidate_cache!
-
+							
 							attempts -= 1
 							retry if attempts > 0
 						end
-
+						
 						raise
 					rescue => error
 						# Network errors might indicate endpoint failure
 						Console.warn(self, error)
-
+						
 						# Invalidate this specific endpoint
 						invalidate_endpoint(client)
-
+						
 						attempts -= 1
 						retry if attempts > 0
-
+						
 						raise
 					end
 				ensure
 					@load_balancer&.record_request_end(endpoint)
 				end
-
+				
 				# Create a stub for the given interface.
 				# Same API as Async::GRPC::Client - load balancing happens per RPC call.
 				# @parameter interface_class [Class] Interface class (subclass of Protocol::GRPC::Interface)
@@ -138,7 +138,7 @@ module Async
 					interface = interface_class.new(service_name)
 					Stub.new(self, interface)
 				end
-
+				
 				# Invoke an RPC (called by Stub). Load balances per call.
 				# @parameter service [Protocol::GRPC::Interface] Interface instance
 				# @parameter method [Symbol, String] Method name
@@ -172,7 +172,7 @@ module Async
 				ensure
 					@load_balancer&.record_request_end(endpoint)
 				end
-
+				
 				# Close xDS client and all connections
 				def close
 					@clients.each_value(&:close)
@@ -180,59 +180,59 @@ module Async
 					@context.close
 					@load_balancer&.close
 				end
-
-			private
-
-					def load_bootstrap(bootstrap)
-						case bootstrap
-						when Hash
-							normalize_keys(bootstrap)
-						when String
-							load_bootstrap_file(bootstrap)
-						when nil
+				
+				private
+				
+				def load_bootstrap(bootstrap)
+					case bootstrap
+					when Hash
+						normalize_keys(bootstrap)
+					when String
+						load_bootstrap_file(bootstrap)
+					when nil
 						load_default_bootstrap
 					else
 						raise ArgumentError, "Invalid bootstrap: #{bootstrap.inspect}"
 					end
 				end
-
+				
 				def load_bootstrap_file(path)
 					raise ConfigurationError, "Bootstrap file not found: #{path}" unless File.exist?(path)
-
-						require "json"
-						normalize_keys(JSON.parse(File.read(path), symbolize_names: true))
-					rescue JSON::ParserError => error
-						raise ConfigurationError, "Invalid bootstrap JSON: #{error.message}"
-					end
-
-					def normalize_keys(object)
-						case object
-						when Hash
-							object.each_with_object({}) do |(key, value), result|
-								result[key.to_sym] = normalize_keys(value)
-							end
-						when Array
-							object.map{|value| normalize_keys(value)}
-						else
-							object
+					
+					require "json"
+					normalize_keys(JSON.parse(File.read(path), symbolize_names: true))
+				rescue JSON::ParserError => error
+					raise ConfigurationError, "Invalid bootstrap JSON: #{error.message}"
+				end
+				
+				def normalize_keys(object)
+					case object
+					when Hash
+						object.each_with_object({}) do |(key, value), result|
+							result[key.to_sym] = normalize_keys(value)
 						end
+					when Array
+						object.map{|value| normalize_keys(value)}
+					else
+						object
 					end
-
+				end
+				
 				def load_default_bootstrap
 					# Try environment variable first
 					if path = ENV["GRPC_XDS_BOOTSTRAP"]
 						return load_bootstrap_file(path)
 					end
-
+					
 					# Try default location
 					default_path = File.expand_path("~/.config/grpc/bootstrap.json")
 					if File.exist?(default_path)
 						return load_bootstrap_file(default_path)
 					end
-
+					
 					raise ConfigurationError, "No bootstrap configuration found"
 				end
-
+				
 				def invalidate_cache!
 					@mutex.synchronize do
 						@clients.each_value(&:close)
@@ -240,7 +240,7 @@ module Async
 						@load_balancer = nil
 					end
 				end
-
+				
 				def invalidate_endpoint(client)
 					@mutex.synchronize do
 						endpoint = @clients.key(client)

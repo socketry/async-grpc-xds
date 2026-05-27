@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Released under the MIT License.
-# Copyright, 2025-2026, by Samuel Williams.
+# Copyright, 2026, by Samuel Williams.
 
 require "async"
 require "async/http/client"
@@ -22,7 +22,7 @@ module Async
 					@endpoints = []
 					@cache = {}
 				end
-
+				
 				# Update endpoints (cleans cache for removed endpoints)
 				# @parameter endpoints [Array<Async::HTTP::Endpoint>] Current endpoints
 				def update_endpoints(endpoints)
@@ -30,7 +30,7 @@ module Async
 					removed.each{|ep| @cache.delete(ep)}
 					@endpoints = endpoints
 				end
-
+				
 				# Check health of endpoint. Runs in caller's reactor.
 				# @parameter endpoint [Async::HTTP::Endpoint] Endpoint to check
 				# @returns [Symbol] :healthy, :unhealthy, or :unknown
@@ -38,23 +38,23 @@ module Async
 					if cached = @cache[endpoint]
 						return cached[:status] if Time.now - cached[:time] < 5
 					end
-
+					
 					status = perform_check(endpoint)
 					@cache[endpoint] = {status: status, time: Time.now}
 					status
 				end
-
+				
 				# Close health checker
 				def close
 					@cache.clear
 				end
-
+				
 			private
-
+				
 				def perform_check(endpoint)
 					health_check = @health_checks.first
 					return :unknown unless health_check
-
+					
 					case health_check[:type]
 					when :HTTP, "HTTP"
 						check_http_health(endpoint, health_check)
@@ -67,7 +67,7 @@ module Async
 					Console.warn(self, "Health check failed for #{endpoint}: #{error.message}")
 					:unhealthy
 				end
-
+				
 				def check_http_health(endpoint, health_check)
 					path = health_check[:path] || "/health"
 					http_client = Async::HTTP::Client.new(endpoint)
@@ -77,7 +77,7 @@ module Async
 				ensure
 					http_client&.close
 				end
-
+				
 				def check_grpc_health(endpoint, health_check)
 					# gRPC health checks (grpc.health.v1.Health) not implemented
 					:unknown

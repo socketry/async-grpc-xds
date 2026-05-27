@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Released under the MIT License.
-# Copyright, 2025-2026, by Samuel Williams.
+# Copyright, 2026, by Samuel Williams.
 
 # Load order matters - Context must be loaded before Client
 require_relative "xds/version"

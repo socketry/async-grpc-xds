@@ -1,6 +1,7 @@
-/.bundle/
-/.ruby-lsp/
-/coverage/
+/agents.md
+/.context
+/.bundle
+/pkg
 /gems.locked
-/*.gem
-/.DS_Store
+/.covered.db
+/external

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Released under the MIT License.
-# Copyright, 2025-2026, by Samuel Williams.
+# Copyright, 2026, by Samuel Williams.
 
 require "protocol/grpc/interface"
 require_relative "test_message"
@@ -24,7 +24,7 @@ module Async
 					response_class: Protocol::GRPC::Fixtures::TestMessage, streaming: :client_streaming
 				rpc :SlowCall
 			end
-
+			
 			# Test service implementation
 			# Method names use snake_case (Ruby convention)
 			class TestService < Async::GRPC::Service
@@ -33,7 +33,7 @@ module Async
 					response = Protocol::GRPC::Fixtures::TestMessage.new(value: "Response: #{request.value}")
 					output.write(response)
 				end
-
+				
 				def server_streaming_call(input, output, _call)
 					request = input.read
 					3.times do |i|
@@ -41,13 +41,13 @@ module Async
 						output.write(response)
 					end
 				end
-
+				
 				def say_hello(input, output, _call)
 					request = input.read
 					response = Protocol::GRPC::Fixtures::TestMessage.new(value: "Hello, #{request.value}!")
 					output.write(response)
 				end
-
+				
 				def bidirectional_call(input, output, _call)
 					# Read all input messages and echo them back with a prefix
 					input.each do |request|
@@ -56,7 +56,7 @@ module Async
 					end
 					output.close_write
 				end
-
+				
 				def client_streaming_call(input, output, _call)
 					# Read all input messages and return a summary
 					values = []
@@ -66,7 +66,7 @@ module Async
 					response = Protocol::GRPC::Fixtures::TestMessage.new(value: "Received: #{values.join(', ')}")
 					output.write(response)
 				end
-
+				
 				def slow_call(input, output, _call)
 					request = input.read
 					sleep 1 # Simulate a slow operation

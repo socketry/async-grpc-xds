@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Released under the MIT License.
-# Copyright, 2025-2026, by Samuel Williams.
+# Copyright, 2026, by Samuel Williams.
 
 module Async
 	module GRPC
@@ -11,7 +11,7 @@ module Async
 				# Based on envoy.config.cluster.v3.Cluster
 				class Cluster
 					attr_reader :name, :type, :lb_policy, :health_checks, :circuit_breakers, :eds_cluster_config
-
+					
 					# Initialize cluster from protobuf or hash
 					# @parameter data [Object, Hash] Cluster protobuf or hash representation
 					def initialize(data)
@@ -32,20 +32,20 @@ module Async
 							@eds_cluster_config = data.eds_cluster_config
 						end
 					end
-
+					
 					# Create Cluster from protobuf message
 					# @parameter proto [Envoy::Config::Cluster::V3::Cluster] Protobuf cluster
 					# @returns [Cluster] Cluster instance
 					def self.from_proto(proto)
 						new(proto)
 					end
-
+					
 					def eds_cluster?
 						@type == :EDS
 					end
-
+					
 					private
-
+					
 					def parse_type(type)
 						# Handle protobuf enum values (integers) or symbols/strings
 						case type
@@ -62,7 +62,7 @@ module Async
 							:EDS
 						end
 					end
-
+					
 					def parse_lb_policy(policy)
 						# Handle protobuf enum values (integers) or symbols/strings
 						case policy
@@ -81,7 +81,7 @@ module Async
 							:ROUND_ROBIN
 						end
 					end
-
+					
 					def parse_health_checks(checks)
 						Array(checks).map do |check|
 							if check.is_a?(Hash)
@@ -102,12 +102,12 @@ module Async
 							end
 						end
 					end
-
+					
 					def parse_health_check_type(checker)
 						# Handle protobuf HealthCheck.health_checker oneof
 						# checker is the health_checker field from HealthCheck protobuf
 						return :HTTP if checker.nil?
-
+						
 						case checker
 						when Hash
 							checker_type = checker[:type]
@@ -135,12 +135,12 @@ module Async
 							end
 						end
 					end
-
+					
 					def parse_duration(duration)
 						# Convert protobuf Duration to seconds (float)
 						return duration if duration.is_a?(Numeric)
 						return nil unless duration
-
+						
 						# If it's a protobuf Duration, convert to seconds
 						if duration.respond_to?(:seconds) && duration.respond_to?(:nanos)
 							duration.seconds + (duration.nanos.to_f / 1_000_000_000)
@@ -148,31 +148,31 @@ module Async
 							duration.to_f
 						end
 					end
-
+					
 					def extract_http_path(check)
 						# Extract HTTP path from hash
 						return nil unless check.is_a?(Hash)
-
+						
 						http_check = check[:http_health_check] || {}
 						http_check[:path] || "/health"
 					end
-
+					
 					def extract_http_path_from_proto(check)
 						# Extract HTTP path from protobuf HealthCheck
 						return nil unless check.respond_to?(:http_health_check)
-
+						
 						http_check = check.http_health_check
 						return nil unless http_check
-
+						
 						http_check.path || "/health"
 					end
 				end
-
+				
 				# Represents endpoint assignment (ClusterLoadAssignment)
 				# Based on envoy.config.endpoint.v3.ClusterLoadAssignment
 				class ClusterLoadAssignment
 					attr_reader :cluster_name, :endpoints
-
+					
 					# Initialize from protobuf or hash
 					# @parameter data [Object, Hash] ClusterLoadAssignment protobuf or hash
 					def initialize(data)
@@ -184,38 +184,38 @@ module Async
 							@endpoints = parse_endpoints(data.endpoints || [])
 						end
 					end
-
+					
 					# Create ClusterLoadAssignment from protobuf message
 					# @parameter proto [Envoy::Config::Endpoint::V3::ClusterLoadAssignment] Protobuf assignment
 					# @returns [ClusterLoadAssignment] Assignment instance
 					def self.from_proto(proto)
 						new(proto)
 					end
-
+					
 					private
-
+					
 					def parse_endpoints(endpoints_data)
 						Array(endpoints_data).flat_map do |locality_endpoints|
 							lb_endpoints = locality_endpoints.is_a?(Hash) ?
 								(locality_endpoints[:lb_endpoints] || []) :
 								(locality_endpoints.lb_endpoints || [])
-
+							
 							lb_endpoints.map{|lb_ep| Endpoint.new(lb_ep)}
 						end
 					end
 				end
-
+				
 				# Represents a single endpoint
 				# Based on envoy.config.endpoint.v3.LbEndpoint
 				class Endpoint
 					attr_reader :address, :port, :health_status, :metadata
-
+					
 					def initialize(lb_endpoint)
 						if lb_endpoint.is_a?(Hash)
 							endpoint_data = lb_endpoint[:endpoint] || {}
 							address_data = endpoint_data[:address] || {}
 							socket_address = address_data[:socket_address] || {}
-
+							
 							@address = socket_address[:address] || "localhost"
 							@port = socket_address[:port_value] || 50051
 							@health_status = parse_health_status(lb_endpoint[:health_status])
@@ -228,19 +228,19 @@ module Async
 							@metadata = lb_endpoint.metadata || {}
 						end
 					end
-
+					
 					def healthy?
 						@health_status == :HEALTHY || @health_status == :UNKNOWN
 					end
-
+					
 					def uri
 						# Use http for insecure/docker environments (gRPC h2c)
 						scheme = ENV["XDS_ENDPOINT_SCHEME"] || "http"
 						"#{scheme}://#{@address}:#{@port}"
 					end
-
+					
 					private
-
+					
 					def parse_health_status(status)
 						# Handle protobuf enum values (integers) or symbols/strings
 						# HealthStatus is defined in envoy.config.endpoint.v3.Endpoint

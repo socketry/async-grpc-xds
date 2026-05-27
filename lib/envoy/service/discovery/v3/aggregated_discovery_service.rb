@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Released under the MIT License.
-# Copyright, 2025-2026, by Samuel Williams.
+# Copyright, 2026, by Samuel Williams.
 
 # Service interface for Envoy Aggregated Discovery Service (ADS)
 # This defines the RPC methods for xDS communication
@@ -49,7 +49,7 @@ module Envoy
 						request_class: DiscoveryRequest,
 						response_class: DiscoveryResponse,
 						streaming: :bidirectional
-
+					
 					# DeltaAggregatedResources is a bidirectional streaming RPC for incremental xDS
 					# Request: stream of DeltaDiscoveryRequest
 					# Response: stream of DeltaDiscoveryResponse

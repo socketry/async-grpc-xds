@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Released under the MIT License.
-# Copyright, 2025-2026, by Samuel Williams.
+# Copyright, 2026, by Samuel Williams.
 
 # Envoy protobuf definitions for xDS support
 # Generated from envoyproxy/data-plane-api
@@ -60,20 +60,20 @@ module Envoy
 			end
 		end
 	end
-
+	
 	module Config
 		module Cluster
 			module V3
 				# Use Envoy::Config::Cluster::V3::Cluster
 			end
 		end
-
+		
 		module Endpoint
 			module V3
 				# Use Envoy::Config::Endpoint::V3::ClusterLoadAssignment
 			end
 		end
-
+		
 		module Core
 			module V3
 				# Use Envoy::Config::Core::V3::Node
