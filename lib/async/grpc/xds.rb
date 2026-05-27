@@ -13,6 +13,10 @@ require_relative "xds/health_checker"
 require_relative "xds/load_balancer"
 require_relative "xds/context"
 require_relative "xds/client"
+require_relative "xds/resource_builder"
+require_relative "xds/control_plane"
+require_relative "xds/service"
+require_relative "xds/server"
 
 module Async
 	module GRPC
