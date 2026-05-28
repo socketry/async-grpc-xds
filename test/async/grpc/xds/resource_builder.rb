@@ -1,0 +1,90 @@
+# frozen_string_literal: true
+
+# Released under the MIT License.
+# Copyright, 2026, by Samuel Williams.
+
+require "async/grpc/xds/resource_builder"
+
+describe Async::GRPC::XDS::ResourceBuilder do
+	it "builds an EDS cluster resource" do
+		cluster = subject.cluster("myservice", service_name: "backend", load_balancer_policy: :least_request, connect_timeout: 1.25)
+		
+		expect(cluster.name).to be == "myservice"
+		expect(cluster.type).to be == :EDS
+		expect(cluster.eds_cluster_config.service_name).to be == "backend"
+		expect(cluster.eds_cluster_config.eds_config.ads).not.to be == nil
+		expect(cluster.lb_policy).to be == :LEAST_REQUEST
+		expect(cluster.connect_timeout.seconds).to be == 1
+		expect(cluster.connect_timeout.nanos).to be == 250_000_000
+		expect(cluster.http2_protocol_options).not.to be == nil
+	end
+	
+	it "packs resources using their protobuf type URL" do
+		cluster = subject.cluster("myservice")
+		resource = subject.pack(cluster)
+		
+		expect(resource.type_url).to be == "type.googleapis.com/envoy.config.cluster.v3.Cluster"
+		expect(resource.value).to be == cluster.to_proto
+	end
+	
+	it "builds endpoint assignments from hashes" do
+		assignment = subject.cluster_load_assignment(
+			"myservice",
+			[
+				{address: "127.0.0.1", port: 50051, hostname: "one", healthy: true},
+				{"address" => "127.0.0.2", "port" => "50052", "healthy" => false}
+			]
+		)
+		
+		expect(assignment.cluster_name).to be == "myservice"
+		
+		endpoints = assignment.endpoints.first.lb_endpoints
+		expect(endpoints.size).to be == 2
+		
+		first = endpoints.first
+		expect(first.endpoint.address.socket_address.address).to be == "127.0.0.1"
+		expect(first.endpoint.address.socket_address.port_value).to be == 50051
+		expect(first.endpoint.hostname).to be == "one"
+		expect(first.health_status).to be == :HEALTHY
+		
+		second = endpoints.last
+		expect(second.endpoint.address.socket_address.address).to be == "127.0.0.2"
+		expect(second.endpoint.address.socket_address.port_value).to be == 50052
+		expect(second.health_status).to be == :UNHEALTHY
+	end
+	
+	it "builds endpoint assignments from endpoint-like objects" do
+		endpoint = Struct.new(:address, :port, :hostname) do
+			def healthy?
+				false
+			end
+		end.new("127.0.0.3", "50053", "three")
+		
+		load_balancer_endpoint = subject.load_balancer_endpoint(endpoint)
+		
+		expect(load_balancer_endpoint.endpoint.address.socket_address.address).to be == "127.0.0.3"
+		expect(load_balancer_endpoint.endpoint.address.socket_address.port_value).to be == 50053
+		expect(load_balancer_endpoint.endpoint.hostname).to be == "three"
+		expect(load_balancer_endpoint.health_status).to be == :UNHEALTHY
+	end
+	
+	it "rejects invalid endpoint data" do
+		expect do
+			subject.load_balancer_endpoint(Object.new)
+		end.to raise_exception(ArgumentError)
+	end
+	
+	it "maps load balancer policies" do
+		expect(subject.load_balancer_policy_value(:round_robin)).to be == Envoy::Config::Cluster::V3::Cluster::LbPolicy::ROUND_ROBIN
+		expect(subject.load_balancer_policy_value("LEAST_REQUEST")).to be == Envoy::Config::Cluster::V3::Cluster::LbPolicy::LEAST_REQUEST
+		expect(subject.load_balancer_policy_value(:random)).to be == Envoy::Config::Cluster::V3::Cluster::LbPolicy::RANDOM
+		expect(subject.load_balancer_policy_value(:custom_policy)).to be == :custom_policy
+	end
+	
+	it "maps health status values" do
+		expect(subject.health_status_value(true)).to be == Envoy::Config::Core::V3::HealthStatus::HEALTHY
+		expect(subject.health_status_value(false)).to be == Envoy::Config::Core::V3::HealthStatus::UNHEALTHY
+		expect(subject.health_status_value(:degraded)).to be == Envoy::Config::Core::V3::HealthStatus::DEGRADED
+		expect(subject.health_status_value(:other)).to be == Envoy::Config::Core::V3::HealthStatus::UNKNOWN
+	end
+end

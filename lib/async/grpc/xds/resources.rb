@@ -109,6 +109,12 @@ module Async
 						return :HTTP if checker.nil?
 						
 						case checker
+						when :http_health_check
+							:HTTP
+						when :grpc_health_check
+							:gRPC
+						when :tcp_health_check
+							:TCP
 						when Hash
 							checker_type = checker[:type]
 							case checker_type
@@ -254,24 +260,7 @@ module Async
 						when :UNKNOWN, "UNKNOWN", 3, nil
 							:UNKNOWN
 						else
-							# Try to match against protobuf enum if available
-							begin
-								require "envoy/config/endpoint/v3/endpoint_pb"
-								case status
-								when Envoy::Config::Endpoint::V3::Endpoint::HealthStatus::HEALTHY
-									:HEALTHY
-								when Envoy::Config::Endpoint::V3::Endpoint::HealthStatus::UNHEALTHY
-									:UNHEALTHY
-								when Envoy::Config::Endpoint::V3::Endpoint::HealthStatus::DEGRADED
-									:DEGRADED
-								when Envoy::Config::Endpoint::V3::Endpoint::HealthStatus::UNKNOWN
-									:UNKNOWN
-								else
-									:UNKNOWN
-								end
-							rescue NameError, LoadError
-								:UNKNOWN
-							end
+							:UNKNOWN
 						end
 					end
 				end
