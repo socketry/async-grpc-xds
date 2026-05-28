@@ -125,8 +125,8 @@ module Async
 					) do |resources|
 						resources.each do |resource|
 							assignment = resource.is_a?(Resources::ClusterLoadAssignment) ? resource : Resources::ClusterLoadAssignment.from_proto(resource)
-							endpoints = assignment.endpoints.select(&:healthy?).map do |ep|
-								Async::HTTP::Endpoint.parse(ep.uri, protocol: Async::HTTP::Protocol::HTTP2)
+							endpoints = assignment.endpoints.select(&:healthy?).map do |endpoint|
+								Async::HTTP::Endpoint.parse(endpoint.uri, protocol: Async::HTTP::Protocol::HTTP2)
 							end
 							@cache.update_endpoints(cluster_name, endpoints)
 							resolve_endpoint_promise(cluster_name, endpoints) unless endpoints.empty?

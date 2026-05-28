@@ -10,7 +10,7 @@ module Async
 				# Represents a discovered cluster
 				# Based on envoy.config.cluster.v3.Cluster
 				class Cluster
-					attr_reader :name, :type, :lb_policy, :health_checks, :circuit_breakers, :eds_cluster_config
+					attr_reader :name, :type, :load_balancer_policy, :health_checks, :circuit_breakers, :eds_cluster_config
 					
 					# Initialize cluster from protobuf or hash
 					# @parameter data [Object, Hash] Cluster protobuf or hash representation
@@ -18,7 +18,7 @@ module Async
 						if data.is_a?(Hash)
 							@name = data[:name]
 							@type = parse_type(data[:type])
-							@lb_policy = parse_lb_policy(data[:lb_policy])
+							@load_balancer_policy = parse_load_balancer_policy(data[:load_balancer_policy] || data[:lb_policy])
 							@health_checks = parse_health_checks(data[:health_checks] || [])
 							@circuit_breakers = data[:circuit_breakers]
 							@eds_cluster_config = data[:eds_cluster_config]
@@ -26,7 +26,7 @@ module Async
 							# Assume protobuf object
 							@name = data.name
 							@type = parse_type(data.type)
-							@lb_policy = parse_lb_policy(data.lb_policy)
+							@load_balancer_policy = parse_load_balancer_policy(data.lb_policy)
 							@health_checks = parse_health_checks(data.health_checks || [])
 							@circuit_breakers = data.circuit_breakers
 							@eds_cluster_config = data.eds_cluster_config
@@ -63,7 +63,7 @@ module Async
 						end
 					end
 					
-					def parse_lb_policy(policy)
+					def parse_load_balancer_policy(policy)
 						# Handle protobuf enum values (integers) or symbols/strings
 						case policy
 						when :ROUND_ROBIN, "ROUND_ROBIN", "envoy.config.cluster.v3.Cluster.ROUND_ROBIN", 0
@@ -196,11 +196,11 @@ module Async
 					
 					def parse_endpoints(endpoints_data)
 						Array(endpoints_data).flat_map do |locality_endpoints|
-							lb_endpoints = locality_endpoints.is_a?(Hash) ?
+							load_balancer_endpoints = locality_endpoints.is_a?(Hash) ?
 								(locality_endpoints[:lb_endpoints] || []) :
 								(locality_endpoints.lb_endpoints || [])
 							
-							lb_endpoints.map{|lb_ep| Endpoint.new(lb_ep)}
+							load_balancer_endpoints.map{|load_balancer_endpoint| Endpoint.new(load_balancer_endpoint)}
 						end
 					end
 				end
@@ -210,22 +210,22 @@ module Async
 				class Endpoint
 					attr_reader :address, :port, :health_status, :metadata
 					
-					def initialize(lb_endpoint)
-						if lb_endpoint.is_a?(Hash)
-							endpoint_data = lb_endpoint[:endpoint] || {}
+					def initialize(load_balancer_endpoint)
+						if load_balancer_endpoint.is_a?(Hash)
+							endpoint_data = load_balancer_endpoint[:endpoint] || {}
 							address_data = endpoint_data[:address] || {}
 							socket_address = address_data[:socket_address] || {}
 							
 							@address = socket_address[:address] || "localhost"
 							@port = socket_address[:port_value] || 50051
-							@health_status = parse_health_status(lb_endpoint[:health_status])
-							@metadata = lb_endpoint[:metadata] || {}
+							@health_status = parse_health_status(load_balancer_endpoint[:health_status])
+							@metadata = load_balancer_endpoint[:metadata] || {}
 						else
-							socket_address = lb_endpoint.endpoint.address.socket_address
+							socket_address = load_balancer_endpoint.endpoint.address.socket_address
 							@address = socket_address.address
 							@port = socket_address.port_value
-							@health_status = parse_health_status(lb_endpoint.health_status)
-							@metadata = lb_endpoint.metadata || {}
+							@health_status = parse_health_status(load_balancer_endpoint.health_status)
+							@metadata = load_balancer_endpoint.metadata || {}
 						end
 					end
 					

@@ -31,7 +31,7 @@ module Async
 					)
 				end
 				
-				def self.cluster(name, service_name: name, lb_policy: :round_robin, connect_timeout: 5)
+				def self.cluster(name, service_name: name, load_balancer_policy: :round_robin, connect_timeout: 5)
 					Envoy::Config::Cluster::V3::Cluster.new(
 						name: name.to_s,
 						type: Envoy::Config::Cluster::V3::Cluster::DiscoveryType::EDS,
@@ -42,7 +42,7 @@ module Async
 							)
 						),
 						connect_timeout: duration(connect_timeout),
-						lb_policy: lb_policy_value(lb_policy),
+						lb_policy: load_balancer_policy_value(load_balancer_policy),
 						http2_protocol_options: Envoy::Config::Core::V3::Http2ProtocolOptions.new
 					)
 				end
@@ -52,13 +52,13 @@ module Async
 						cluster_name: cluster_name.to_s,
 						endpoints: [
 							Envoy::Config::Endpoint::V3::LocalityLbEndpoints.new(
-								lb_endpoints: endpoints.map{|endpoint| lb_endpoint(endpoint)}
+								lb_endpoints: endpoints.map{|endpoint| load_balancer_endpoint(endpoint)}
 							)
 						]
 					)
 				end
 					
-				def self.lb_endpoint(endpoint)
+				def self.load_balancer_endpoint(endpoint)
 					endpoint = normalize_endpoint(endpoint)
 						
 					Envoy::Config::Endpoint::V3::LbEndpoint.new(
@@ -106,8 +106,8 @@ module Async
 					Google::Protobuf::Duration.new(seconds: whole_seconds, nanos: nanos)
 				end
 					
-				def self.lb_policy_value(lb_policy)
-					case lb_policy
+				def self.load_balancer_policy_value(load_balancer_policy)
+					case load_balancer_policy
 					when :round_robin, :ROUND_ROBIN, "round_robin", "ROUND_ROBIN"
 						Envoy::Config::Cluster::V3::Cluster::LbPolicy::ROUND_ROBIN
 					when :least_request, :LEAST_REQUEST, "least_request", "LEAST_REQUEST"
@@ -115,7 +115,7 @@ module Async
 					when :random, :RANDOM, "random", "RANDOM"
 						Envoy::Config::Cluster::V3::Cluster::LbPolicy::RANDOM
 					else
-						lb_policy
+						load_balancer_policy
 					end
 				end
 					

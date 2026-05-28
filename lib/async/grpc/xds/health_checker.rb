@@ -27,7 +27,7 @@ module Async
 				# @parameter endpoints [Array<Async::HTTP::Endpoint>] Current endpoints
 				def update_endpoints(endpoints)
 					removed = @endpoints - endpoints
-					removed.each{|ep| @cache.delete(ep)}
+					removed.each{|endpoint| @cache.delete(endpoint)}
 					@endpoints = endpoints
 				end
 				

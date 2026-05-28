@@ -14,7 +14,7 @@ module Async
 			# Client-side load balancing with health checking.
 			# RING_HASH and MAGLEV fall back to round-robin (require request context to hash).
 			class LoadBalancer
-				# Load balancing policies (matching Envoy cluster LB policies)
+				# Load balancing policies.
 				ROUND_ROBIN = :round_robin
 				LEAST_REQUEST = :least_request
 				RANDOM = :random
@@ -27,7 +27,7 @@ module Async
 				def initialize(cluster, endpoints)
 					@cluster = cluster
 					@endpoints = endpoints
-					@policy = parse_policy(cluster.lb_policy)
+					@policy = parse_policy(cluster.load_balancer_policy)
 					@health_status = {}  # Track health per endpoint
 					@health_checker = HealthChecker.new(cluster.health_checks)
 					@current_index = 0
@@ -35,8 +35,8 @@ module Async
 					@health_check_task = nil  # Transient task for health check loop
 					
 					# Initialize health status
-					@endpoints.each do |ep|
-						@health_status[ep] = :unknown
+					@endpoints.each do |endpoint|
+						@health_status[endpoint] = :unknown
 					end
 					
 					# Start health checking if configured
@@ -46,7 +46,7 @@ module Async
 				# Get healthy endpoints
 				# @returns [Array<Async::HTTP::Endpoint>] Healthy endpoints
 				def healthy_endpoints
-					@endpoints.select{|ep| healthy?(ep)}
+					@endpoints.select{|endpoint| healthy?(endpoint)}
 				end
 				
 				# Pick next endpoint using load balancing policy
@@ -81,14 +81,14 @@ module Async
 					@health_checker.update_endpoints(endpoints)
 					
 					# Initialize health status for new endpoints
-					endpoints.each do |ep|
-						@health_status[ep] ||= :unknown
+					endpoints.each do |endpoint|
+						@health_status[endpoint] ||= :unknown
 					end
 					
 					# Remove state for old endpoints
-					(old_endpoints - endpoints).each do |ep|
-						@health_status.delete(ep)
-						@in_flight_requests.delete(ep)
+					(old_endpoints - endpoints).each do |endpoint|
+						@health_status.delete(endpoint)
+						@in_flight_requests.delete(endpoint)
 					end
 				end
 				
@@ -142,7 +142,7 @@ module Async
 				
 				def pick_least_request(endpoints)
 					# Track in-flight requests and pick endpoint with fewest
-					endpoints.min_by{|ep| @in_flight_requests[ep] || 0}
+					endpoints.min_by{|endpoint| @in_flight_requests[endpoint] || 0}
 				end
 				
 				def pick_random(endpoints)
@@ -157,9 +157,9 @@ module Async
 					pick_round_robin(endpoints)  # Fallback; requires request context for Maglev hashing
 				end
 				
-				def parse_policy(lb_policy)
-					# Parse cluster LB policy to our constants
-					case lb_policy
+				def parse_policy(load_balancer_policy)
+					# Parse cluster load balancer policy to our constants
+					case load_balancer_policy
 					when :ROUND_ROBIN, "ROUND_ROBIN"
 						ROUND_ROBIN
 					when :LEAST_REQUEST, "LEAST_REQUEST"
