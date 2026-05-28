@@ -11,38 +11,11 @@ The Docker Compose setup includes:
 
 ## Running Tests
 
-### Start the environment
+From this directory:
 
 ```bash
 cd xds
-bundle install  # generates gems.locked for Docker build
-docker compose up -d
-```
-
-### Wait for services to be ready
-
-```bash
-docker compose ps
-```
-
-All services should show as "healthy" or "running".
-
-### Run tests
-
-```bash
-# Run tests in docker compose
-docker compose run --rm tests
-
-# Or run tests locally (if services are accessible)
-# Set XDS_SERVER_URI environment variable
-export XDS_SERVER_URI=xds-control-plane:18000
-bundle exec sus xds/test
-```
-
-### Cleanup
-
-```bash
-docker compose down
+docker compose up --build --exit-code-from tests
 ```
 
 ## Test Structure

@@ -19,7 +19,7 @@ This is an early implementation focused on ADS with CDS and EDS. LDS/RDS, full r
 The `xds/` directory contains a Docker Compose integration environment with a Go xDS control plane and Ruby gRPC backends.
 
 ``` bash
-docker-compose -f xds/docker-compose.yaml up --exit-code-from tests
+docker compose -f xds/docker-compose.yaml up --build --exit-code-from tests
 ```
 
 ## Releases
