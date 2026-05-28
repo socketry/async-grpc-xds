@@ -8,26 +8,7 @@ This gem contains the experimental xDS implementation extracted from `async-grpc
 
 ## Usage
 
-``` ruby
-require "async/grpc/xds"
-
-bootstrap = {
-	xds_servers: [
-		{
-			server_uri: "xds-control-plane:18000",
-			channel_creds: [{type: "insecure"}]
-		}
-	],
-	node: {
-		id: "client-1",
-		cluster: "test"
-	}
-}
-
-xds_client = Async::GRPC::XDS::Client.new("myservice", bootstrap: bootstrap)
-stub = xds_client.stub(MyServiceInterface, "myservice")
-response = stub.say_hello(request)
-```
+Please see the [project documentation](https://socketry.github.io/async-grpc-xds/) for more details.
 
 ## Status
 
@@ -43,7 +24,11 @@ docker-compose -f xds/docker-compose.yaml up --exit-code-from tests
 
 ## Releases
 
-There are no documented releases.
+Please see the [project releases](https://socketry.github.io/async-grpc-xds/releases/index) for all releases.
+
+### v0.1.0
+
+  - Initial extraction from `async-grpc`.
 
 ## See Also
 

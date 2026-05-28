@@ -2,4 +2,4 @@
 
 ## v0.1.0
 
-- Initial extraction from `async-grpc`.
+  - Initial extraction from `async-grpc`.

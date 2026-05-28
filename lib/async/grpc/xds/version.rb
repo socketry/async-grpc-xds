@@ -6,7 +6,7 @@
 module Async
 	module GRPC
 		module XDS
-			VERSION = "0.0.0"
+			VERSION = "0.0.1"
 		end
 	end
 end
