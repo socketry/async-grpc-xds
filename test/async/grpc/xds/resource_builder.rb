@@ -19,6 +19,12 @@ describe Async::GRPC::XDS::ResourceBuilder do
 		expect(cluster.http2_protocol_options).not.to be == nil
 	end
 	
+	it "builds an HTTP/1 EDS cluster resource" do
+		cluster = subject.cluster("myservice", protocol: :http1)
+		
+		expect(cluster.http2_protocol_options).to be == nil
+	end
+	
 	it "packs resources using their protobuf type URL" do
 		cluster = subject.cluster("myservice")
 		resource = subject.pack(cluster)
@@ -66,6 +72,33 @@ describe Async::GRPC::XDS::ResourceBuilder do
 		expect(load_balancer_endpoint.endpoint.address.socket_address.port_value).to be == 50053
 		expect(load_balancer_endpoint.endpoint.hostname).to be == "three"
 		expect(load_balancer_endpoint.health_status).to be == :UNHEALTHY
+	end
+	
+	it "builds grouped IP and Unix endpoint addresses" do
+		load_balancer_endpoint = subject.load_balancer_endpoint({
+			addresses: [
+				{path: "/tmp/falcon.ipc"},
+				{address: "127.0.0.1", port: 9292},
+			]
+		})
+		endpoint = load_balancer_endpoint.endpoint
+		
+		expect(endpoint.address.pipe.path).to be == "/tmp/falcon.ipc"
+		expect(endpoint.additional_addresses.size).to be == 1
+		expect(endpoint.additional_addresses.first.address.socket_address.address).to be == "127.0.0.1"
+		expect(endpoint.additional_addresses.first.address.socket_address.port_value).to be == 9292
+	end
+	
+	it "rejects unsupported upstream protocols" do
+		expect do
+			subject.cluster("myservice", protocol: :http3)
+		end.to raise_exception(ArgumentError)
+	end
+	
+	it "rejects endpoints without addresses" do
+		expect do
+			subject.load_balancer_endpoint(addresses: [])
+		end.to raise_exception(ArgumentError)
 	end
 	
 	it "rejects invalid endpoint data" do

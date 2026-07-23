@@ -31,8 +31,8 @@ module Async
 					)
 				end
 				
-				def self.cluster(name, service_name: name, load_balancer_policy: :round_robin, connect_timeout: 5)
-					Envoy::Config::Cluster::V3::Cluster.new(
+				def self.cluster(name, service_name: name, load_balancer_policy: :round_robin, connect_timeout: 5, protocol: :http2)
+					options = {
 						name: name.to_s,
 						type: Envoy::Config::Cluster::V3::Cluster::DiscoveryType::EDS,
 						eds_cluster_config: Envoy::Config::Cluster::V3::Cluster::EdsClusterConfig.new(
@@ -43,8 +43,18 @@ module Async
 						),
 						connect_timeout: duration(connect_timeout),
 						lb_policy: load_balancer_policy_value(load_balancer_policy),
-						http2_protocol_options: Envoy::Config::Core::V3::Http2ProtocolOptions.new
-					)
+					}
+					
+					case protocol
+					when :http1, "http1", "http/1.1"
+						# Envoy uses HTTP/1 by default.
+					when :http2, "http2", "h2"
+						options[:http2_protocol_options] = Envoy::Config::Core::V3::Http2ProtocolOptions.new
+					else
+						raise ArgumentError, "Unsupported upstream protocol: #{protocol.inspect}"
+					end
+					
+					Envoy::Config::Cluster::V3::Cluster.new(**options)
 				end
 				
 				def self.cluster_load_assignment(cluster_name, endpoints)
@@ -60,16 +70,17 @@ module Async
 					
 				def self.load_balancer_endpoint(endpoint)
 					endpoint = normalize_endpoint(endpoint)
+					addresses = endpoint.fetch(:addresses)
+					address = addresses.first
 						
 					Envoy::Config::Endpoint::V3::LbEndpoint.new(
 						endpoint: Envoy::Config::Endpoint::V3::Endpoint.new(
-							address: Envoy::Config::Core::V3::Address.new(
-								socket_address: Envoy::Config::Core::V3::SocketAddress.new(
-									protocol: Envoy::Config::Core::V3::SocketAddress::Protocol::TCP,
-									address: endpoint[:address],
-									port_value: endpoint[:port]
+							address: build_address(address),
+							additional_addresses: addresses.drop(1).map do |additional_address|
+								Envoy::Config::Endpoint::V3::Endpoint::AdditionalAddress.new(
+									address: build_address(additional_address)
 								)
-							),
+							end,
 							hostname: endpoint[:hostname].to_s
 						),
 						health_status: health_status_value(endpoint.fetch(:healthy, true))
@@ -80,16 +91,20 @@ module Async
 					case endpoint
 					when Hash
 						{
-							address: endpoint.fetch(:address){endpoint.fetch("address")},
-							port: endpoint.fetch(:port){endpoint.fetch("port")}.to_i,
+							addresses: normalize_addresses(endpoint),
 							hostname: endpoint[:hostname] || endpoint["hostname"],
 							healthy: endpoint.key?(:healthy) ? endpoint[:healthy] : endpoint.fetch("healthy", true)
 						}
 					else
-						if endpoint.respond_to?(:address) && endpoint.respond_to?(:port)
+						if endpoint.respond_to?(:addresses)
 							{
-								address: endpoint.address,
-								port: endpoint.port.to_i,
+								addresses: endpoint.addresses.map{|address| normalize_address(address)},
+								hostname: endpoint.respond_to?(:hostname) ? endpoint.hostname : nil,
+								healthy: endpoint.respond_to?(:healthy?) ? endpoint.healthy? : true
+							}
+						elsif endpoint.respond_to?(:address) && endpoint.respond_to?(:port)
+							{
+								addresses: [{address: endpoint.address, port: endpoint.port.to_i}],
 								hostname: endpoint.respond_to?(:hostname) ? endpoint.hostname : nil,
 								healthy: endpoint.respond_to?(:healthy?) ? endpoint.healthy? : true
 							}
@@ -98,6 +113,47 @@ module Async
 						end
 					end
 				end
+					
+				def self.normalize_addresses(endpoint)
+					addresses = if addresses = endpoint[:addresses] || endpoint["addresses"]
+						addresses.map{|address| normalize_address(address)}
+					else
+						[normalize_address(endpoint)]
+					end
+						
+					raise ArgumentError, "An endpoint requires at least one address!" if addresses.empty?
+						
+					addresses
+				end
+					
+				def self.normalize_address(address)
+					if path = address[:path] || address["path"]
+						{path: path}
+					else
+						{
+							address: address.fetch(:address){address.fetch("address")},
+							port: address.fetch(:port){address.fetch("port")}.to_i,
+						}
+					end
+				end
+					
+				def self.build_address(address)
+					if path = address[:path]
+						Envoy::Config::Core::V3::Address.new(
+							pipe: Envoy::Config::Core::V3::Pipe.new(path: path)
+						)
+					else
+						Envoy::Config::Core::V3::Address.new(
+							socket_address: Envoy::Config::Core::V3::SocketAddress.new(
+								protocol: Envoy::Config::Core::V3::SocketAddress::Protocol::TCP,
+								address: address[:address],
+								port_value: address[:port]
+							)
+						)
+					end
+				end
+					
+				private_class_method :normalize_addresses, :normalize_address, :build_address
 					
 				def self.duration(seconds)
 					whole_seconds = seconds.to_i
