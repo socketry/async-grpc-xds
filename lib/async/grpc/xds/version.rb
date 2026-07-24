@@ -7,6 +7,7 @@
 module Async
 	# @namespace
 	module GRPC
+		# @namespace
 		module XDS
 			VERSION = "0.0.1"
 		end
