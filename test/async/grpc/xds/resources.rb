@@ -256,6 +256,3 @@ describe Async::GRPC::XDS::Resources::Endpoint do
 		expect(endpoint.health_status).to be == :UNKNOWN
 	end
 end
-
-
-
