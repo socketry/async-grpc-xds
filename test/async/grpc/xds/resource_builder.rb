@@ -37,8 +37,8 @@ describe Async::GRPC::XDS::ResourceBuilder do
 		assignment = subject.cluster_load_assignment(
 			"myservice",
 			[
-				{address: "127.0.0.1", port: 50051, hostname: "one", healthy: true},
-				{"address" => "127.0.0.2", "port" => "50052", "healthy" => false}
+				{addresses: [{address: "127.0.0.1", port: 50051}], hostname: "one", healthy: true},
+				{addresses: [{address: "127.0.0.2", port: 50052}], healthy: false}
 			]
 		)
 		
@@ -57,28 +57,6 @@ describe Async::GRPC::XDS::ResourceBuilder do
 		expect(second.endpoint.address.socket_address.address).to be == "127.0.0.2"
 		expect(second.endpoint.address.socket_address.port_value).to be == 50052
 		expect(second.health_status).to be == :UNHEALTHY
-	end
-	
-	it "builds endpoint assignments from hash-like objects" do
-		endpoint = Object.new
-		def endpoint.to_hash
-			{
-				addresses: [
-					{address: "127.0.0.3", port: "50053"},
-					{path: "/tmp/falcon.ipc"},
-				],
-				hostname: "three",
-				healthy: false,
-			}
-		end
-		
-		load_balancer_endpoint = subject.load_balancer_endpoint(endpoint)
-		
-		expect(load_balancer_endpoint.endpoint.address.socket_address.address).to be == "127.0.0.3"
-		expect(load_balancer_endpoint.endpoint.address.socket_address.port_value).to be == 50053
-		expect(load_balancer_endpoint.endpoint.additional_addresses.first.address.pipe.path).to be == "/tmp/falcon.ipc"
-		expect(load_balancer_endpoint.endpoint.hostname).to be == "three"
-		expect(load_balancer_endpoint.health_status).to be == :UNHEALTHY
 	end
 	
 	it "builds grouped IP and Unix endpoint addresses" do

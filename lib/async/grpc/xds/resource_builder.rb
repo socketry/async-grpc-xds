@@ -88,37 +88,16 @@ module Async
 				end
 				
 				def self.normalize_endpoint(endpoint)
-					value = Hash.try_convert(endpoint)
-					raise ArgumentError, "Invalid endpoint: #{endpoint.inspect}" unless value
+					raise ArgumentError, "Invalid endpoint: #{endpoint.inspect}" unless endpoint.is_a?(Hash)
 					
-					{
-						addresses: normalize_addresses(value),
-						hostname: value[:hostname] || value["hostname"],
-						healthy: value.key?(:healthy) ? value[:healthy] : value.fetch("healthy", true)
-					}
-				end
-				
-				def self.normalize_addresses(endpoint)
-					addresses = if addresses = endpoint[:addresses] || endpoint["addresses"]
-						addresses.map{|address| normalize_address(address)}
-					else
-						[normalize_address(endpoint)]
-					end
-					
+					addresses = endpoint.fetch(:addresses)
 					raise ArgumentError, "An endpoint requires at least one address!" if addresses.empty?
 					
-					addresses
-				end
-				
-				def self.normalize_address(address)
-					if path = address[:path] || address["path"]
-						{path: path}
-					else
-						{
-							address: address.fetch(:address){address.fetch("address")},
-							port: address.fetch(:port){address.fetch("port")}.to_i,
-						}
-					end
+					{
+						addresses: addresses,
+						hostname: endpoint[:hostname],
+						healthy: endpoint.fetch(:healthy, true)
+					}
 				end
 				
 				def self.build_address(address)
@@ -130,14 +109,14 @@ module Async
 						Envoy::Config::Core::V3::Address.new(
 							socket_address: Envoy::Config::Core::V3::SocketAddress.new(
 								protocol: Envoy::Config::Core::V3::SocketAddress::Protocol::TCP,
-								address: address[:address],
-								port_value: address[:port]
+								address: address.fetch(:address),
+								port_value: address.fetch(:port)
 							)
 						)
 					end
 				end
 				
-				private_class_method :normalize_addresses, :normalize_address, :build_address
+				private_class_method :build_address
 				
 				def self.duration(seconds)
 					whole_seconds = seconds.to_i

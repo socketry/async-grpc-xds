@@ -23,7 +23,7 @@ describe Async::GRPC::XDS::ControlPlane do
 	end
 	
 	it "publishes endpoint resources" do
-		control_plane.update_endpoints("myservice", [{address: "127.0.0.1", port: 50051}])
+		control_plane.update_endpoints("myservice", [{addresses: [{address: "127.0.0.1", port: 50051}]}])
 		
 		response = control_plane.response(
 			Async::GRPC::XDS::ControlPlane::ENDPOINT_TYPE,
@@ -58,8 +58,8 @@ describe Async::GRPC::XDS::ControlPlane do
 	end
 	
 	it "increments versions when resources change" do
-		control_plane.update_endpoints("myservice", [{address: "127.0.0.1", port: 50051}])
-		control_plane.update_endpoints("myservice", [{address: "127.0.0.2", port: 50052}])
+		control_plane.update_endpoints("myservice", [{addresses: [{address: "127.0.0.1", port: 50051}]}])
+		control_plane.update_endpoints("myservice", [{addresses: [{address: "127.0.0.2", port: 50052}]}])
 		
 		expect(control_plane.version(Async::GRPC::XDS::ControlPlane::ENDPOINT_TYPE)).to be == "2"
 	end
@@ -79,7 +79,7 @@ describe Async::GRPC::XDS::ControlPlane do
 	end
 	
 	it "removes endpoint resources" do
-		control_plane.update_endpoints("myservice", [{address: "127.0.0.1", port: 50051}])
+		control_plane.update_endpoints("myservice", [{addresses: [{address: "127.0.0.1", port: 50051}]}])
 		control_plane.remove_endpoints("myservice")
 		
 		expect(control_plane.resources(Async::GRPC::XDS::ControlPlane::ENDPOINT_TYPE)).to be(:empty?)
