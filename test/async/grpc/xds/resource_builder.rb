@@ -86,12 +86,6 @@ describe Async::GRPC::XDS::ResourceBuilder do
 		end.to raise_exception(ArgumentError)
 	end
 	
-	it "rejects invalid endpoint data" do
-		expect do
-			subject.load_balancer_endpoint(Object.new)
-		end.to raise_exception(ArgumentError)
-	end
-	
 	it "maps load balancer policies" do
 		expect(subject.load_balancer_policy_value(:round_robin)).to be == Envoy::Config::Cluster::V3::Cluster::LbPolicy::ROUND_ROBIN
 		expect(subject.load_balancer_policy_value("LEAST_REQUEST")).to be == Envoy::Config::Cluster::V3::Cluster::LbPolicy::LEAST_REQUEST

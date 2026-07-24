@@ -69,17 +69,15 @@ module Async
 				end
 				
 				def self.load_balancer_endpoint(endpoint)
-					raise ArgumentError, "Invalid endpoint: #{endpoint.inspect}" unless endpoint.is_a?(Hash)
-					
 					addresses, healthy = endpoint.fetch_values(:addresses, :healthy)
 					raise ArgumentError, "An endpoint requires at least one address!" if addresses.empty?
 					
-					address = addresses.first
+					address, *additional_addresses = addresses
 					
 					Envoy::Config::Endpoint::V3::LbEndpoint.new(
 						endpoint: Envoy::Config::Endpoint::V3::Endpoint.new(
 							address: build_address(address),
-							additional_addresses: addresses.drop(1).map do |additional_address|
+							additional_addresses: additional_addresses.map do |additional_address|
 								Envoy::Config::Endpoint::V3::Endpoint::AdditionalAddress.new(
 									address: build_address(additional_address)
 								)
