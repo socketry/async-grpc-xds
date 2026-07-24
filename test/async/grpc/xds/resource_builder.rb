@@ -37,7 +37,7 @@ describe Async::GRPC::XDS::ResourceBuilder do
 		assignment = subject.cluster_load_assignment(
 			"myservice",
 			[
-				{addresses: [{address: "127.0.0.1", port: 50051}], hostname: "one", healthy: true},
+				{addresses: [{address: "127.0.0.1", port: 50051}], healthy: true},
 				{addresses: [{address: "127.0.0.2", port: 50052}], healthy: false}
 			]
 		)
@@ -50,7 +50,6 @@ describe Async::GRPC::XDS::ResourceBuilder do
 		first = endpoints.first
 		expect(first.endpoint.address.socket_address.address).to be == "127.0.0.1"
 		expect(first.endpoint.address.socket_address.port_value).to be == 50051
-		expect(first.endpoint.hostname).to be == "one"
 		expect(first.health_status).to be == :HEALTHY
 		
 		second = endpoints.last

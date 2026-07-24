@@ -46,9 +46,9 @@ module Async
 					}
 					
 					case protocol
-					when :http1, "http1", "http/1.1"
+					when :http1
 						# Envoy uses HTTP/1 by default.
-					when :http2, "http2", "h2"
+					when :http2
 						options[:http2_protocol_options] = Envoy::Config::Core::V3::Http2ProtocolOptions.new
 					else
 						raise ArgumentError, "Unsupported upstream protocol: #{protocol.inspect}"
@@ -80,8 +80,7 @@ module Async
 								Envoy::Config::Endpoint::V3::Endpoint::AdditionalAddress.new(
 									address: build_address(additional_address)
 								)
-							end,
-							hostname: endpoint[:hostname].to_s
+							end
 						),
 						health_status: health_status_value(endpoint.fetch(:healthy, true))
 					)
@@ -95,7 +94,6 @@ module Async
 					
 					{
 						addresses: addresses,
-						hostname: endpoint[:hostname],
 						healthy: endpoint.fetch(:healthy, true)
 					}
 				end
