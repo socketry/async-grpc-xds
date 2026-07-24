@@ -63,7 +63,8 @@ describe Async::GRPC::XDS::ResourceBuilder do
 			addresses: [
 				{path: "/tmp/falcon.ipc"},
 				{address: "127.0.0.1", port: 9292},
-			]
+			],
+			healthy: true,
 		})
 		endpoint = load_balancer_endpoint.endpoint
 		
@@ -81,7 +82,7 @@ describe Async::GRPC::XDS::ResourceBuilder do
 	
 	it "rejects endpoints without addresses" do
 		expect do
-			subject.load_balancer_endpoint(addresses: [])
+			subject.load_balancer_endpoint(addresses: [], healthy: true)
 		end.to raise_exception(ArgumentError)
 	end
 	

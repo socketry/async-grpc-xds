@@ -173,7 +173,7 @@ describe Async::GRPC::XDS::Resources::ClusterLoadAssignment do
 		protobuf = Async::GRPC::XDS::ResourceBuilder.cluster_load_assignment(
 			"myservice",
 			[
-				{addresses: [{address: "127.0.0.1", port: 50051}]},
+				{addresses: [{address: "127.0.0.1", port: 50051}], healthy: true},
 				{addresses: [{address: "127.0.0.2", port: 50052}], healthy: false}
 			]
 		)
@@ -256,7 +256,6 @@ describe Async::GRPC::XDS::Resources::Endpoint do
 		expect(endpoint.health_status).to be == :UNKNOWN
 	end
 end
-
 
 
 

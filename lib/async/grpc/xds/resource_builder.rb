@@ -69,8 +69,11 @@ module Async
 				end
 				
 				def self.load_balancer_endpoint(endpoint)
-					endpoint = normalize_endpoint(endpoint)
-					addresses = endpoint.fetch(:addresses)
+					raise ArgumentError, "Invalid endpoint: #{endpoint.inspect}" unless endpoint.is_a?(Hash)
+					
+					addresses, healthy = endpoint.fetch_values(:addresses, :healthy)
+					raise ArgumentError, "An endpoint requires at least one address!" if addresses.empty?
+					
 					address = addresses.first
 					
 					Envoy::Config::Endpoint::V3::LbEndpoint.new(
@@ -82,20 +85,8 @@ module Async
 								)
 							end
 						),
-						health_status: health_status_value(endpoint.fetch(:healthy, true))
+						health_status: health_status_value(healthy)
 					)
-				end
-				
-				def self.normalize_endpoint(endpoint)
-					raise ArgumentError, "Invalid endpoint: #{endpoint.inspect}" unless endpoint.is_a?(Hash)
-					
-					addresses = endpoint.fetch(:addresses)
-					raise ArgumentError, "An endpoint requires at least one address!" if addresses.empty?
-					
-					{
-						addresses: addresses,
-						healthy: endpoint.fetch(:healthy, true)
-					}
 				end
 				
 				def self.build_address(address)
