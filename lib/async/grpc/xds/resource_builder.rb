@@ -31,8 +31,16 @@ module Async
 					)
 				end
 				
-				def self.cluster(name, service_name: name, load_balancer_policy: :round_robin, connect_timeout: 5)
-					Envoy::Config::Cluster::V3::Cluster.new(
+				# Build an EDS cluster resource.
+				# @parameter name [String] The cluster name.
+				# @parameter service_name [String] The EDS service name.
+				# @parameter load_balancer_policy [Symbol] The Envoy load-balancing policy.
+				# @parameter connect_timeout [Numeric] The upstream connection timeout in seconds.
+				# @parameter protocol [Symbol] The canonical upstream protocol, either `:http1` or `:http2`.
+				# @returns [Envoy::Config::Cluster::V3::Cluster] The generated cluster resource.
+				# @raises [ArgumentError] If the upstream protocol is unsupported.
+				def self.cluster(name, service_name: name, load_balancer_policy: :round_robin, connect_timeout: 5, protocol: :http2)
+					options = {
 						name: name.to_s,
 						type: Envoy::Config::Cluster::V3::Cluster::DiscoveryType::EDS,
 						eds_cluster_config: Envoy::Config::Cluster::V3::Cluster::EdsClusterConfig.new(
@@ -43,10 +51,24 @@ module Async
 						),
 						connect_timeout: duration(connect_timeout),
 						lb_policy: load_balancer_policy_value(load_balancer_policy),
-						http2_protocol_options: Envoy::Config::Core::V3::Http2ProtocolOptions.new
-					)
+					}
+					
+					case protocol
+					when :http1
+						# Envoy uses HTTP/1 by default.
+					when :http2
+						options[:http2_protocol_options] = Envoy::Config::Core::V3::Http2ProtocolOptions.new
+					else
+						raise ArgumentError, "Unsupported upstream protocol: #{protocol.inspect}"
+					end
+					
+					Envoy::Config::Cluster::V3::Cluster.new(**options)
 				end
 				
+				# Build an EDS cluster load assignment from normalized endpoint state.
+				# @parameter cluster_name [String] The cluster name.
+				# @parameter endpoints [Array(Hash)] The endpoints, each containing `:addresses` and `:healthy`.
+				# @returns [Envoy::Config::Endpoint::V3::ClusterLoadAssignment] The generated load assignment.
 				def self.cluster_load_assignment(cluster_name, endpoints)
 					Envoy::Config::Endpoint::V3::ClusterLoadAssignment.new(
 						cluster_name: cluster_name.to_s,
@@ -57,55 +79,61 @@ module Async
 						]
 					)
 				end
-					
+				
+				# Build an Envoy load-balancer endpoint from normalized endpoint state.
+				# @parameter endpoint [Hash] The endpoint containing `:addresses` and `:healthy`.
+				# @returns [Envoy::Config::Endpoint::V3::LbEndpoint] The generated load-balancer endpoint.
+				# @raises [KeyError] If required endpoint state is missing.
+				# @raises [ArgumentError] If the endpoint has no addresses.
 				def self.load_balancer_endpoint(endpoint)
-					endpoint = normalize_endpoint(endpoint)
-						
+					addresses, healthy = endpoint.fetch_values(:addresses, :healthy)
+					raise ArgumentError, "An endpoint requires at least one address!" if addresses.empty?
+					
+					address, *additional_addresses = addresses
+					
 					Envoy::Config::Endpoint::V3::LbEndpoint.new(
 						endpoint: Envoy::Config::Endpoint::V3::Endpoint.new(
-							address: Envoy::Config::Core::V3::Address.new(
-								socket_address: Envoy::Config::Core::V3::SocketAddress.new(
-									protocol: Envoy::Config::Core::V3::SocketAddress::Protocol::TCP,
-									address: endpoint[:address],
-									port_value: endpoint[:port]
+							address: build_address(address),
+							additional_addresses: additional_addresses.map do |additional_address|
+								Envoy::Config::Endpoint::V3::Endpoint::AdditionalAddress.new(
+									address: build_address(additional_address)
 								)
-							),
-							hostname: endpoint[:hostname].to_s
+							end
 						),
-						health_status: health_status_value(endpoint.fetch(:healthy, true))
+						health_status: health_status_value(healthy)
 					)
 				end
-					
-				def self.normalize_endpoint(endpoint)
-					case endpoint
-					when Hash
-						{
-							address: endpoint.fetch(:address){endpoint.fetch("address")},
-							port: endpoint.fetch(:port){endpoint.fetch("port")}.to_i,
-							hostname: endpoint[:hostname] || endpoint["hostname"],
-							healthy: endpoint.key?(:healthy) ? endpoint[:healthy] : endpoint.fetch("healthy", true)
-						}
+				
+				# Build an Envoy address from a normalized IP or Unix address.
+				# @parameter address [Hash] An IP `:address` and `:port`, or a Unix `:path`.
+				# @returns [Envoy::Config::Core::V3::Address] The generated Envoy address.
+				# @raises [KeyError] If required IP address state is missing.
+				# @private
+				def self.build_address(address)
+					if path = address[:path]
+						Envoy::Config::Core::V3::Address.new(
+							pipe: Envoy::Config::Core::V3::Pipe.new(path: path)
+						)
 					else
-						if endpoint.respond_to?(:address) && endpoint.respond_to?(:port)
-							{
-								address: endpoint.address,
-								port: endpoint.port.to_i,
-								hostname: endpoint.respond_to?(:hostname) ? endpoint.hostname : nil,
-								healthy: endpoint.respond_to?(:healthy?) ? endpoint.healthy? : true
-							}
-						else
-							raise ArgumentError, "Invalid endpoint: #{endpoint.inspect}"
-						end
+						Envoy::Config::Core::V3::Address.new(
+							socket_address: Envoy::Config::Core::V3::SocketAddress.new(
+								protocol: Envoy::Config::Core::V3::SocketAddress::Protocol::TCP,
+								address: address.fetch(:address),
+								port_value: address.fetch(:port)
+							)
+						)
 					end
 				end
-					
+				
+				private_class_method :build_address
+				
 				def self.duration(seconds)
 					whole_seconds = seconds.to_i
 					nanos = ((seconds.to_f - whole_seconds) * 1_000_000_000).to_i
-						
+					
 					Google::Protobuf::Duration.new(seconds: whole_seconds, nanos: nanos)
 				end
-					
+				
 				def self.load_balancer_policy_value(load_balancer_policy)
 					case load_balancer_policy
 					when :round_robin, :ROUND_ROBIN, "round_robin", "ROUND_ROBIN"
@@ -118,7 +146,7 @@ module Async
 						load_balancer_policy
 					end
 				end
-					
+				
 				def self.health_status_value(healthy)
 					case healthy
 					when :healthy, :HEALTHY, "healthy", "HEALTHY", true
@@ -135,4 +163,3 @@ module Async
 		end
 	end
 end
-	

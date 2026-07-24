@@ -33,8 +33,8 @@ describe Async::GRPC::XDS::ControlPlane do
 		control_plane.update_endpoints(
 			"myservice",
 			[
-				{address: "127.0.0.1", port: 50051},
-				{address: "127.0.0.2", port: 50052, healthy: false}
+				{addresses: [{address: "127.0.0.1", port: 50051}], healthy: true},
+				{addresses: [{address: "127.0.0.2", port: 50052}], healthy: false}
 			]
 		)
 		
@@ -49,15 +49,15 @@ describe Async::GRPC::XDS::ControlPlane do
 	end
 	
 	it "increments resource versions" do
-		control_plane.update_endpoints("myservice", [{address: "127.0.0.1", port: 50051}])
-		control_plane.update_endpoints("myservice", [{address: "127.0.0.2", port: 50052}])
+		control_plane.update_endpoints("myservice", [{addresses: [{address: "127.0.0.1", port: 50051}], healthy: true}])
+		control_plane.update_endpoints("myservice", [{addresses: [{address: "127.0.0.2", port: 50052}], healthy: true}])
 		
 		expect(control_plane.version(Async::GRPC::XDS::ControlPlane::ENDPOINT_TYPE)).to be == "2"
 	end
 	
 	it "serves resources over ADS" do
 		control_plane.update_cluster("myservice")
-		control_plane.update_endpoints("myservice", [{address: "127.0.0.1", port: 50051}])
+		control_plane.update_endpoints("myservice", [{addresses: [{address: "127.0.0.1", port: 50051}], healthy: true}])
 		
 		port = available_port
 		endpoint = Async::HTTP::Endpoint.parse(
