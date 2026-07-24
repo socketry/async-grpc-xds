@@ -67,12 +67,12 @@ module Async
 						]
 					)
 				end
-					
+				
 				def self.load_balancer_endpoint(endpoint)
 					endpoint = normalize_endpoint(endpoint)
 					addresses = endpoint.fetch(:addresses)
 					address = addresses.first
-						
+					
 					Envoy::Config::Endpoint::V3::LbEndpoint.new(
 						endpoint: Envoy::Config::Endpoint::V3::Endpoint.new(
 							address: build_address(address),
@@ -86,7 +86,7 @@ module Async
 						health_status: health_status_value(endpoint.fetch(:healthy, true))
 					)
 				end
-					
+				
 				def self.normalize_endpoint(endpoint)
 					case endpoint
 					when Hash
@@ -113,19 +113,19 @@ module Async
 						end
 					end
 				end
-					
+				
 				def self.normalize_addresses(endpoint)
 					addresses = if addresses = endpoint[:addresses] || endpoint["addresses"]
 						addresses.map{|address| normalize_address(address)}
 					else
 						[normalize_address(endpoint)]
 					end
-						
+					
 					raise ArgumentError, "An endpoint requires at least one address!" if addresses.empty?
-						
+					
 					addresses
 				end
-					
+				
 				def self.normalize_address(address)
 					if path = address[:path] || address["path"]
 						{path: path}
@@ -136,7 +136,7 @@ module Async
 						}
 					end
 				end
-					
+				
 				def self.build_address(address)
 					if path = address[:path]
 						Envoy::Config::Core::V3::Address.new(
@@ -152,16 +152,16 @@ module Async
 						)
 					end
 				end
-					
+				
 				private_class_method :normalize_addresses, :normalize_address, :build_address
-					
+				
 				def self.duration(seconds)
 					whole_seconds = seconds.to_i
 					nanos = ((seconds.to_f - whole_seconds) * 1_000_000_000).to_i
-						
+					
 					Google::Protobuf::Duration.new(seconds: whole_seconds, nanos: nanos)
 				end
-					
+				
 				def self.load_balancer_policy_value(load_balancer_policy)
 					case load_balancer_policy
 					when :round_robin, :ROUND_ROBIN, "round_robin", "ROUND_ROBIN"
@@ -174,7 +174,7 @@ module Async
 						load_balancer_policy
 					end
 				end
-					
+				
 				def self.health_status_value(healthy)
 					case healthy
 					when :healthy, :HEALTHY, "healthy", "HEALTHY", true
@@ -191,4 +191,3 @@ module Async
 		end
 	end
 end
-	
