@@ -88,30 +88,14 @@ module Async
 				end
 				
 				def self.normalize_endpoint(endpoint)
-					case endpoint
-					when Hash
-						{
-							addresses: normalize_addresses(endpoint),
-							hostname: endpoint[:hostname] || endpoint["hostname"],
-							healthy: endpoint.key?(:healthy) ? endpoint[:healthy] : endpoint.fetch("healthy", true)
-						}
-					else
-						if endpoint.respond_to?(:addresses)
-							{
-								addresses: endpoint.addresses.map{|address| normalize_address(address)},
-								hostname: endpoint.respond_to?(:hostname) ? endpoint.hostname : nil,
-								healthy: endpoint.respond_to?(:healthy?) ? endpoint.healthy? : true
-							}
-						elsif endpoint.respond_to?(:address) && endpoint.respond_to?(:port)
-							{
-								addresses: [{address: endpoint.address, port: endpoint.port.to_i}],
-								hostname: endpoint.respond_to?(:hostname) ? endpoint.hostname : nil,
-								healthy: endpoint.respond_to?(:healthy?) ? endpoint.healthy? : true
-							}
-						else
-							raise ArgumentError, "Invalid endpoint: #{endpoint.inspect}"
-						end
-					end
+					value = Hash.try_convert(endpoint)
+					raise ArgumentError, "Invalid endpoint: #{endpoint.inspect}" unless value
+					
+					{
+						addresses: normalize_addresses(value),
+						hostname: value[:hostname] || value["hostname"],
+						healthy: value.key?(:healthy) ? value[:healthy] : value.fetch("healthy", true)
+					}
 				end
 				
 				def self.normalize_addresses(endpoint)

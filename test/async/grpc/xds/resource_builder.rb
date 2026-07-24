@@ -59,17 +59,24 @@ describe Async::GRPC::XDS::ResourceBuilder do
 		expect(second.health_status).to be == :UNHEALTHY
 	end
 	
-	it "builds endpoint assignments from endpoint-like objects" do
-		endpoint = Struct.new(:address, :port, :hostname) do
-			def healthy?
-				false
-			end
-		end.new("127.0.0.3", "50053", "three")
+	it "builds endpoint assignments from hash-like objects" do
+		endpoint = Object.new
+		def endpoint.to_hash
+			{
+				addresses: [
+					{address: "127.0.0.3", port: "50053"},
+					{path: "/tmp/falcon.ipc"},
+				],
+				hostname: "three",
+				healthy: false,
+			}
+		end
 		
 		load_balancer_endpoint = subject.load_balancer_endpoint(endpoint)
 		
 		expect(load_balancer_endpoint.endpoint.address.socket_address.address).to be == "127.0.0.3"
 		expect(load_balancer_endpoint.endpoint.address.socket_address.port_value).to be == 50053
+		expect(load_balancer_endpoint.endpoint.additional_addresses.first.address.pipe.path).to be == "/tmp/falcon.ipc"
 		expect(load_balancer_endpoint.endpoint.hostname).to be == "three"
 		expect(load_balancer_endpoint.health_status).to be == :UNHEALTHY
 	end
