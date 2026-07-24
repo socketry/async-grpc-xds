@@ -31,6 +31,14 @@ module Async
 					)
 				end
 				
+				# Build an EDS cluster resource.
+				# @parameter name [String] The cluster name.
+				# @parameter service_name [String] The EDS service name.
+				# @parameter load_balancer_policy [Symbol] The Envoy load-balancing policy.
+				# @parameter connect_timeout [Numeric] The upstream connection timeout in seconds.
+				# @parameter protocol [Symbol] The canonical upstream protocol, either `:http1` or `:http2`.
+				# @returns [Envoy::Config::Cluster::V3::Cluster] The generated cluster resource.
+				# @raises [ArgumentError] If the upstream protocol is unsupported.
 				def self.cluster(name, service_name: name, load_balancer_policy: :round_robin, connect_timeout: 5, protocol: :http2)
 					options = {
 						name: name.to_s,
@@ -57,6 +65,10 @@ module Async
 					Envoy::Config::Cluster::V3::Cluster.new(**options)
 				end
 				
+				# Build an EDS cluster load assignment from normalized endpoint state.
+				# @parameter cluster_name [String] The cluster name.
+				# @parameter endpoints [Array(Hash)] The endpoints, each containing `:addresses` and `:healthy`.
+				# @returns [Envoy::Config::Endpoint::V3::ClusterLoadAssignment] The generated load assignment.
 				def self.cluster_load_assignment(cluster_name, endpoints)
 					Envoy::Config::Endpoint::V3::ClusterLoadAssignment.new(
 						cluster_name: cluster_name.to_s,
@@ -68,6 +80,11 @@ module Async
 					)
 				end
 				
+				# Build an Envoy load-balancer endpoint from normalized endpoint state.
+				# @parameter endpoint [Hash] The endpoint containing `:addresses` and `:healthy`.
+				# @returns [Envoy::Config::Endpoint::V3::LbEndpoint] The generated load-balancer endpoint.
+				# @raises [KeyError] If required endpoint state is missing.
+				# @raises [ArgumentError] If the endpoint has no addresses.
 				def self.load_balancer_endpoint(endpoint)
 					addresses, healthy = endpoint.fetch_values(:addresses, :healthy)
 					raise ArgumentError, "An endpoint requires at least one address!" if addresses.empty?
@@ -87,6 +104,11 @@ module Async
 					)
 				end
 				
+				# Build an Envoy address from a normalized IP or Unix address.
+				# @parameter address [Hash] An IP `:address` and `:port`, or a Unix `:path`.
+				# @returns [Envoy::Config::Core::V3::Address] The generated Envoy address.
+				# @raises [KeyError] If required IP address state is missing.
+				# @private
 				def self.build_address(address)
 					if path = address[:path]
 						Envoy::Config::Core::V3::Address.new(
