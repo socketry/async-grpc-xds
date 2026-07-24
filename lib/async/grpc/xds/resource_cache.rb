@@ -9,6 +9,7 @@ module Async
 			# Caches discovered xDS resources
 			# Thread-safe cache for clusters and endpoints
 			class ResourceCache
+				# Initialize an empty resource cache.
 				def initialize
 					@clusters = {}
 					@endpoints = {}

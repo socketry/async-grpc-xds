@@ -152,15 +152,22 @@ module Async
 			# ADSStream::Delegate interface - must be public for ADSStream to call
 			public
 				
+				# Record that an ADS stream has opened and unblock pending subscriptions.
+				# @parameter stream [ADSStream] The opened stream.
 				def stream_opened(stream)
 					@mutex.synchronize{@ads_stream = stream}
 					@stream_ready_promise&.resolve(stream)
 				end
 				
+				# Record that an ADS stream has closed.
+				# @parameter stream [ADSStream] The closed stream.
 				def stream_closed(stream)
 					@mutex.synchronize{@ads_stream = nil}
 				end
 				
+				# Process a discovery response received by an ADS stream.
+				# @parameter response [Envoy::Service::Discovery::V3::DiscoveryResponse] The received response.
+				# @parameter stream [ADSStream] The stream that received the response.
 				def discovery_response(response, stream)
 					process_response(response, stream)
 				end

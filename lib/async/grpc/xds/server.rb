@@ -14,6 +14,9 @@ module Async
 		module XDS
 			# Convenience wrapper for serving an xDS control plane over gRPC.
 			class Server
+				# Initialize an xDS server.
+				# @parameter control_plane [ControlPlane] The control plane to serve.
+				# @parameter options [Hash] Default options forwarded to `Async::HTTP::Server`.
 				def initialize(control_plane = ControlPlane.new, **options)
 					@control_plane = control_plane
 					@dispatcher = Async::GRPC::Dispatcher.new
@@ -24,6 +27,10 @@ module Async
 				attr :control_plane
 				attr :dispatcher
 				
+				# Run the xDS server on an endpoint.
+				# @parameter endpoint [Async::HTTP::Endpoint] The endpoint to bind.
+				# @parameter options [Hash] Options forwarded to `Async::HTTP::Server`.
+				# @asynchronous
 				def run(endpoint, **options)
 					server = Async::HTTP::Server.new(@dispatcher, endpoint, **@options, **options)
 					server.run
