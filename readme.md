@@ -28,7 +28,15 @@ Please see the [project releases](https://socketry.github.io/async-grpc-xds/rele
 
 ### v0.1.0
 
-  - Initial extraction from `async-grpc`.
+  - Add complete documentation coverage for the public xDS API.
+  - Support grouped IP and Unix-domain-socket addresses in EDS endpoints.
+  - Support selecting HTTP/1 or HTTP/2 for generated clusters.
+
+### v0.1.0
+
+  - Add complete documentation coverage for the public xDS API.
+  - Support grouped IP and Unix-domain-socket addresses in EDS endpoints.
+  - Support selecting HTTP/1 or HTTP/2 for generated clusters.
 
 ## See Also
 

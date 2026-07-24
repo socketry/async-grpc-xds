@@ -1,6 +1,6 @@
 # Releases
 
-## Unreleased
+## v0.1.0
 
   - Add complete documentation coverage for the public xDS API.
   - Support grouped IP and Unix-domain-socket addresses in EDS endpoints.
