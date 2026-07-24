@@ -18,7 +18,9 @@ require_relative "xds/control_plane"
 require_relative "xds/service"
 require_relative "xds/server"
 
+# @namespace
 module Async
+	# @namespace
 	module GRPC
 		# xDS (Discovery Service) support for dynamic service discovery and configuration
 		#

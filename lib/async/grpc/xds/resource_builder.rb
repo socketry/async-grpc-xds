@@ -24,6 +24,9 @@ module Async
 				CLUSTER_TYPE = "#{TYPE_URL_PREFIX}/envoy.config.cluster.v3.Cluster"
 				ENDPOINT_TYPE = "#{TYPE_URL_PREFIX}/envoy.config.endpoint.v3.ClusterLoadAssignment"
 				
+				# Pack a protobuf resource into a `google.protobuf.Any` message.
+				# @parameter resource [Google::Protobuf::MessageExts] The protobuf resource to pack.
+				# @returns [Google::Protobuf::Any] The packed resource.
 				def self.pack(resource)
 					Google::Protobuf::Any.new(
 						type_url: "#{TYPE_URL_PREFIX}/#{resource.class.descriptor.name}",
@@ -127,6 +130,9 @@ module Async
 				
 				private_class_method :build_address
 				
+				# Convert seconds to a protobuf duration.
+				# @parameter seconds [Numeric] The duration in seconds.
+				# @returns [Google::Protobuf::Duration] The protobuf duration.
 				def self.duration(seconds)
 					whole_seconds = seconds.to_i
 					nanos = ((seconds.to_f - whole_seconds) * 1_000_000_000).to_i
@@ -134,6 +140,9 @@ module Async
 					Google::Protobuf::Duration.new(seconds: whole_seconds, nanos: nanos)
 				end
 				
+				# Convert a load-balancer policy name to its Envoy enum value.
+				# @parameter load_balancer_policy [Symbol | String | Integer] The load-balancer policy.
+				# @returns [Integer] The Envoy load-balancer policy enum value.
 				def self.load_balancer_policy_value(load_balancer_policy)
 					case load_balancer_policy
 					when :round_robin, :ROUND_ROBIN, "round_robin", "ROUND_ROBIN"
@@ -147,6 +156,9 @@ module Async
 					end
 				end
 				
+				# Convert an endpoint health status to its Envoy enum value.
+				# @parameter healthy [Boolean | Symbol | String] The normalized health status.
+				# @returns [Integer] The Envoy health-status enum value.
 				def self.health_status_value(healthy)
 					case healthy
 					when :healthy, :HEALTHY, "healthy", "HEALTHY", true

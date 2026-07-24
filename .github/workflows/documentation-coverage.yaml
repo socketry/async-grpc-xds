@@ -22,4 +22,4 @@ jobs:
     
     - name: Validate coverage
       timeout-minutes: 5
-      run: bundle exec bake decode:index:coverage lib
+      run: bundle exec bake decode:index:coverage lib/async

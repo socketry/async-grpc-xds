@@ -24,6 +24,10 @@ module Async
 					end
 				end
 				
+				# Initialize an ADS stream.
+				# @parameter client [Async::GRPC::Client] The gRPC client used to open the stream.
+				# @parameter node [Envoy::Config::Core::V3::Node] The xDS node identity.
+				# @parameter delegate [Delegate] The object that receives stream events.
 				def initialize(client, node, delegate:)
 					@client = client
 					@node = node

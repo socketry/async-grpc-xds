@@ -6,6 +6,7 @@
 module Async
 	module GRPC
 		module XDS
+			# @namespace
 			module Resources
 				# Represents a discovered cluster
 				# Based on envoy.config.cluster.v3.Cluster
@@ -40,6 +41,8 @@ module Async
 						new(proto)
 					end
 					
+					# Determine whether this cluster uses the Endpoint Discovery Service.
+					# @returns [Boolean] `true` if the cluster uses EDS.
 					def eds_cluster?
 						@type == :EDS
 					end
@@ -216,6 +219,8 @@ module Async
 				class Endpoint
 					attr_reader :address, :port, :health_status, :metadata
 					
+					# Initialize an endpoint from a protobuf message or hash.
+					# @parameter load_balancer_endpoint [Envoy::Config::Endpoint::V3::LbEndpoint | Hash] The load-balancer endpoint representation.
 					def initialize(load_balancer_endpoint)
 						if load_balancer_endpoint.is_a?(Hash)
 							endpoint_data = load_balancer_endpoint[:endpoint] || {}
@@ -235,10 +240,14 @@ module Async
 						end
 					end
 					
+					# Determine whether this endpoint is eligible to receive traffic.
+					# @returns [Boolean] `true` if the endpoint is healthy or has unknown health.
 					def healthy?
 						@health_status == :HEALTHY || @health_status == :UNKNOWN
 					end
 					
+					# Build the HTTP URI for this endpoint.
+					# @returns [String] The endpoint URI.
 					def uri
 						# Use http for insecure/docker environments (gRPC h2c)
 						scheme = ENV["XDS_ENDPOINT_SCHEME"] || "http"

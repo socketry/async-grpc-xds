@@ -21,11 +21,19 @@ module Async
 			class Service < Async::GRPC::Service
 				SERVICE_NAME = "envoy.service.discovery.v3.AggregatedDiscoveryService"
 				
+				# Initialize an Aggregated Discovery Service.
+				# @parameter control_plane [ControlPlane] The control plane that provides resources.
 				def initialize(control_plane)
 					super(Envoy::Service::Discovery::V3::AggregatedDiscoveryService, SERVICE_NAME)
 					@control_plane = control_plane
 				end
 				
+				# Serve a state-of-the-world Aggregated Discovery Service stream.
+				# @parameter input [Enumerable] The stream of discovery requests.
+				# @parameter output [Interface(:write)] The discovery response stream.
+				# @parameter call [Object] The gRPC call context.
+				# @returns [void]
+				# @asynchronous
 				def stream_aggregated_resources(input, output, call)
 					stream = Stream.new(@control_plane, output)
 					@control_plane.register_stream(stream)
@@ -48,6 +56,11 @@ module Async
 					@control_plane.remove_stream(stream) if stream
 				end
 				
+				# Reject a delta Aggregated Discovery Service stream, which is not supported.
+				# @parameter input [Enumerable] The stream of delta discovery requests.
+				# @parameter output [Interface(:write)] The delta discovery response stream.
+				# @parameter call [Object] The gRPC call context.
+				# @raises [Protocol::GRPC::Error] Always raised because delta xDS is not implemented.
 				def delta_aggregated_resources(input, output, call)
 					raise Protocol::GRPC::Error.new(
 						Protocol::GRPC::Status::UNIMPLEMENTED,
@@ -57,6 +70,9 @@ module Async
 				
 				# Represents one ADS stream and its subscribed resources.
 				class Stream
+					# Initialize an ADS stream.
+					# @parameter control_plane [ControlPlane] The control plane that provides resources.
+					# @parameter output [Interface(:write)] The discovery response stream.
 					def initialize(control_plane, output)
 						@control_plane = control_plane
 						@output = output
@@ -66,6 +82,9 @@ module Async
 						@closed = false
 					end
 					
+					# Process a discovery request and update the stream's subscriptions.
+					# @parameter request [Envoy::Service::Discovery::V3::DiscoveryRequest] The discovery request.
+					# @returns [void]
 					def request(request)
 						return if request.type_url.nil? || request.type_url.empty?
 						
@@ -83,10 +102,16 @@ module Async
 						@queue << request.type_url
 					end
 					
+					# Schedule a resource type for delivery after it changes.
+					# @parameter type_url [String] The changed xDS resource type URL.
+					# @returns [void]
 					def changed(type_url)
 						@queue << type_url unless @closed
 					end
 					
+					# Deliver scheduled resource updates until the stream closes.
+					# @returns [void]
+					# @asynchronous
 					def run
 						until @closed
 							type_url = @queue.dequeue
@@ -94,6 +119,9 @@ module Async
 						end
 					end
 					
+					# Deliver the latest resource version for a subscribed type.
+					# @parameter type_url [String] The xDS resource type URL.
+					# @returns [void]
 					def flush(type_url)
 						names = @subscriptions[type_url]
 						return unless names
@@ -106,6 +134,8 @@ module Async
 						@versions[type_url] = version
 					end
 					
+					# Close the stream and stop waiting for changes.
+					# @returns [void]
 					def close
 						@closed = true
 						@queue.close
