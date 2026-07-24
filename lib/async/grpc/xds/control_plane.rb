@@ -37,7 +37,6 @@ module Async
 				# @parameter name [String] The cluster name.
 				# @parameter resource [Envoy::Config::Cluster::V3::Cluster | Nil] An existing cluster resource, or `nil` to build one from `options`.
 				# @parameter options [Hash] Options forwarded to {ResourceBuilder.cluster}.
-				# @returns [void]
 				def update_cluster(name, resource = nil, **options)
 					resource ||= ResourceBuilder.cluster(name, **options)
 					update_resource(CLUSTER_TYPE, name.to_s, resource)
@@ -46,7 +45,6 @@ module Async
 				# Add or replace the endpoint assignment for a cluster.
 				# @parameter cluster_name [String] The cluster name.
 				# @parameter endpoints [Array(Hash)] The normalized endpoint states.
-				# @returns [void]
 				def update_endpoints(cluster_name, endpoints)
 					update_resource(
 						ENDPOINT_TYPE,
@@ -57,14 +55,12 @@ module Async
 				
 				# Remove a cluster resource.
 				# @parameter name [String] The cluster name.
-				# @returns [void]
 				def remove_cluster(name)
 					remove_resource(CLUSTER_TYPE, name.to_s)
 				end
 				
 				# Remove the endpoint assignment for a cluster.
 				# @parameter cluster_name [String] The cluster name.
-				# @returns [void]
 				def remove_endpoints(cluster_name)
 					remove_resource(ENDPOINT_TYPE, cluster_name.to_s)
 				end
@@ -73,7 +69,6 @@ module Async
 				# @parameter type_url [String] The xDS resource type URL.
 				# @parameter name [String] The resource name.
 				# @parameter resource [Google::Protobuf::MessageExts] The protobuf resource.
-				# @returns [void]
 				def update_resource(type_url, name, resource)
 					notify = false
 					
@@ -89,7 +84,6 @@ module Async
 				# Remove an xDS resource and notify subscribed streams.
 				# @parameter type_url [String] The xDS resource type URL.
 				# @parameter name [String] The resource name.
-				# @returns [void]
 				def remove_resource(type_url, name)
 					notify = false
 					
@@ -156,7 +150,6 @@ module Async
 				
 				# Register a stream to receive resource-change notifications.
 				# @parameter stream [Service::Stream] The stream to register.
-				# @returns [void]
 				def register_stream(stream)
 					@mutex.synchronize do
 						@streams.add(stream)
@@ -165,7 +158,6 @@ module Async
 				
 				# Remove a registered stream.
 				# @parameter stream [Service::Stream] The stream to remove.
-				# @returns [void]
 				def remove_stream(stream)
 					@mutex.synchronize do
 						@streams.delete(stream)

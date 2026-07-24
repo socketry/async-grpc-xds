@@ -30,7 +30,6 @@ module Async
 				# Run the xDS server on an endpoint.
 				# @parameter endpoint [Async::HTTP::Endpoint] The endpoint to bind.
 				# @parameter options [Hash] Options forwarded to `Async::HTTP::Server`.
-				# @returns [void]
 				# @asynchronous
 				def run(endpoint, **options)
 					server = Async::HTTP::Server.new(@dispatcher, endpoint, **@options, **options)

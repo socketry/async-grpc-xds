@@ -154,7 +154,6 @@ module Async
 				
 				# Record that an ADS stream has opened and unblock pending subscriptions.
 				# @parameter stream [ADSStream] The opened stream.
-				# @returns [void]
 				def stream_opened(stream)
 					@mutex.synchronize{@ads_stream = stream}
 					@stream_ready_promise&.resolve(stream)
@@ -162,7 +161,6 @@ module Async
 				
 				# Record that an ADS stream has closed.
 				# @parameter stream [ADSStream] The closed stream.
-				# @returns [void]
 				def stream_closed(stream)
 					@mutex.synchronize{@ads_stream = nil}
 				end
@@ -170,7 +168,6 @@ module Async
 				# Process a discovery response received by an ADS stream.
 				# @parameter response [Envoy::Service::Discovery::V3::DiscoveryResponse] The received response.
 				# @parameter stream [ADSStream] The stream that received the response.
-				# @returns [void]
 				def discovery_response(response, stream)
 					process_response(response, stream)
 				end

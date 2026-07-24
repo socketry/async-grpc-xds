@@ -32,7 +32,6 @@ module Async
 				# @parameter input [Enumerable] The stream of discovery requests.
 				# @parameter output [Interface(:write)] The discovery response stream.
 				# @parameter call [Object] The gRPC call context.
-				# @returns [void]
 				# @asynchronous
 				def stream_aggregated_resources(input, output, call)
 					stream = Stream.new(@control_plane, output)
@@ -84,7 +83,6 @@ module Async
 					
 					# Process a discovery request and update the stream's subscriptions.
 					# @parameter request [Envoy::Service::Discovery::V3::DiscoveryRequest] The discovery request.
-					# @returns [void]
 					def request(request)
 						return if request.type_url.nil? || request.type_url.empty?
 						
@@ -104,13 +102,11 @@ module Async
 					
 					# Schedule a resource type for delivery after it changes.
 					# @parameter type_url [String] The changed xDS resource type URL.
-					# @returns [void]
 					def changed(type_url)
 						@queue << type_url unless @closed
 					end
 					
 					# Deliver scheduled resource updates until the stream closes.
-					# @returns [void]
 					# @asynchronous
 					def run
 						until @closed
@@ -121,7 +117,6 @@ module Async
 					
 					# Deliver the latest resource version for a subscribed type.
 					# @parameter type_url [String] The xDS resource type URL.
-					# @returns [void]
 					def flush(type_url)
 						names = @subscriptions[type_url]
 						return unless names
@@ -135,7 +130,6 @@ module Async
 					end
 					
 					# Close the stream and stop waiting for changes.
-					# @returns [void]
 					def close
 						@closed = true
 						@queue.close
