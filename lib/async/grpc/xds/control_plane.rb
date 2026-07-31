@@ -11,6 +11,7 @@ require "async/queue"
 require "envoy/config/core/v3/base_pb"
 require "envoy/service/discovery/v3/discovery_pb"
 require "google/protobuf/any_pb"
+require "google/protobuf/well_known_types"
 
 require_relative "cluster"
 require_relative "endpoint"
@@ -143,7 +144,7 @@ module Async
 					
 					Envoy::Service::Discovery::V3::DiscoveryResponse.new(
 						version_info: version,
-						resources: resources.map{|resource| pack_resource(resource)},
+						resources: resources.map{|resource| Google::Protobuf::Any.pack(resource)},
 						type_url: type_url,
 						nonce: "#{type_url}:#{version}:#{SecureRandom.hex(8)}",
 						control_plane: Envoy::Config::Core::V3::ControlPlane.new(identifier: @identifier)
@@ -167,13 +168,6 @@ module Async
 				end
 				
 				private
-				
-				def pack_resource(resource)
-					Google::Protobuf::Any.new(
-						type_url: "type.googleapis.com/#{resource.class.descriptor.name}",
-						value: resource.to_proto
-					)
-				end
 				
 				def notify_streams(type_url)
 					streams = @mutex.synchronize{@streams.to_a}
