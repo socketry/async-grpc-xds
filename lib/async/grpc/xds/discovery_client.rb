@@ -16,6 +16,9 @@ require "envoy/config/cluster/v3/cluster_pb"
 require "envoy/config/endpoint/v3/endpoint_pb"
 require "google/protobuf/any_pb"
 
+require_relative "cluster"
+require_relative "endpoint"
+
 module Async
 	module GRPC
 		module XDS
@@ -27,8 +30,8 @@ module Async
 				# xDS API type URLs (v3 API)
 				LISTENER_TYPE = "type.googleapis.com/envoy.config.listener.v3.Listener"
 				ROUTE_TYPE = "type.googleapis.com/envoy.config.route.v3.RouteConfiguration"
-				CLUSTER_TYPE = "type.googleapis.com/envoy.config.cluster.v3.Cluster"
-				ENDPOINT_TYPE = "type.googleapis.com/envoy.config.endpoint.v3.ClusterLoadAssignment"
+				CLUSTER_TYPE = Cluster::TYPE_URL
+				ENDPOINT_TYPE = Endpoint::TYPE_URL
 				SECRET_TYPE = "type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.Secret"
 				
 				# Initialize xDS discovery client

@@ -5,7 +5,6 @@
 
 require "async/grpc/xds/control_plane"
 require "async/grpc/xds/client"
-require "async/grpc/xds/resource_builder"
 require "async/grpc/xds/server"
 require "async/http/endpoint"
 require "sus/fixtures/async"

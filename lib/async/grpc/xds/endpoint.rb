@@ -3,77 +3,24 @@
 # Released under the MIT License.
 # Copyright, 2026, by Samuel Williams.
 
-require "google/protobuf/any_pb"
-require "google/protobuf/duration_pb"
-
-require "envoy/config/cluster/v3/cluster_pb"
 require "envoy/config/core/v3/address_pb"
-require "envoy/config/core/v3/config_source_pb"
-require "envoy/config/core/v3/health_check_pb"
-require "envoy/config/core/v3/protocol_pb"
 require "envoy/config/endpoint/v3/endpoint_pb"
 require "envoy/config/endpoint/v3/endpoint_components_pb"
 
 module Async
 	module GRPC
 		module XDS
-			# Builds Envoy xDS resource protobufs.
-			module ResourceBuilder
-				TYPE_URL_PREFIX = "type.googleapis.com"
+			# Builds Envoy endpoint resources.
+			module Endpoint
+				extend self
 				
-				CLUSTER_TYPE = "#{TYPE_URL_PREFIX}/envoy.config.cluster.v3.Cluster"
-				ENDPOINT_TYPE = "#{TYPE_URL_PREFIX}/envoy.config.endpoint.v3.ClusterLoadAssignment"
-				
-				# Pack a protobuf resource into a `google.protobuf.Any` message.
-				# @parameter resource [Google::Protobuf::MessageExts] The protobuf resource to pack.
-				# @returns [Google::Protobuf::Any] The packed resource.
-				def self.pack(resource)
-					Google::Protobuf::Any.new(
-						type_url: "#{TYPE_URL_PREFIX}/#{resource.class.descriptor.name}",
-						value: resource.to_proto
-					)
-				end
-				
-				# Build an EDS cluster resource.
-				# @parameter name [String] The cluster name.
-				# @parameter service_name [String] The EDS service name.
-				# @parameter load_balancing_policy [Envoy::Config::Cluster::V3::LoadBalancingPolicy | Nil] The typed Envoy load-balancing policy.
-				# @parameter connect_timeout [Numeric] The upstream connection timeout in seconds.
-				# @parameter protocol [Symbol] The canonical upstream protocol, either `:http1` or `:http2`.
-				# @returns [Envoy::Config::Cluster::V3::Cluster] The generated cluster resource.
-				# @raises [ArgumentError] If the upstream protocol is unsupported.
-				def self.cluster(name, service_name: name, load_balancing_policy: nil, connect_timeout: 5, protocol: :http2)
-					options = {
-						name: name.to_s,
-						type: Envoy::Config::Cluster::V3::Cluster::DiscoveryType::EDS,
-						eds_cluster_config: Envoy::Config::Cluster::V3::Cluster::EdsClusterConfig.new(
-							service_name: service_name.to_s,
-							eds_config: Envoy::Config::Core::V3::ConfigSource.new(
-								ads: Envoy::Config::Core::V3::AggregatedConfigSource.new
-							)
-						),
-						connect_timeout: duration(connect_timeout),
-					}
-					
-					options[:load_balancing_policy] = load_balancing_policy if load_balancing_policy
-					
-					case protocol
-					when :http1
-						# Envoy uses HTTP/1 by default.
-					when :http2
-						options[:http2_protocol_options] = Envoy::Config::Core::V3::Http2ProtocolOptions.new
-					else
-						raise ArgumentError, "Unsupported upstream protocol: #{protocol.inspect}"
-					end
-					
-					Envoy::Config::Cluster::V3::Cluster.new(**options)
-				end
+				TYPE_URL = "type.googleapis.com/envoy.config.endpoint.v3.ClusterLoadAssignment"
 				
 				# Build an EDS cluster load assignment from normalized endpoint state.
 				# @parameter cluster_name [String] The cluster name.
 				# @parameter endpoints [Array(Hash)] The endpoints, each containing `:addresses` and `:healthy`.
-				# @returns [Envoy::Config::Endpoint::V3::ClusterLoadAssignment] The generated load assignment.
-				def self.cluster_load_assignment(cluster_name, endpoints)
+				# @returns [Envoy::Config::Endpoint::V3::ClusterLoadAssignment] The generated endpoint resource.
+				def build(cluster_name, endpoints)
 					Envoy::Config::Endpoint::V3::ClusterLoadAssignment.new(
 						cluster_name: cluster_name.to_s,
 						endpoints: [
@@ -84,12 +31,15 @@ module Async
 					)
 				end
 				
+				private
+				
 				# Build an Envoy load-balancer endpoint from normalized endpoint state.
 				# @parameter endpoint [Hash] The endpoint containing `:addresses` and `:healthy`.
 				# @returns [Envoy::Config::Endpoint::V3::LbEndpoint] The generated load-balancer endpoint.
 				# @raises [KeyError] If required endpoint state is missing.
 				# @raises [ArgumentError] If the endpoint has no addresses.
-				def self.load_balancer_endpoint(endpoint)
+				# @private
+				def load_balancer_endpoint(endpoint)
 					addresses, healthy = endpoint.fetch_values(:addresses, :healthy)
 					raise ArgumentError, "An endpoint requires at least one address!" if addresses.empty?
 					
@@ -114,7 +64,7 @@ module Async
 				# @returns [Envoy::Config::Core::V3::Address] The generated Envoy address.
 				# @raises [KeyError] If required IP address state is missing.
 				# @private
-				def self.build_address(address)
+				def build_address(address)
 					if path = address[:path]
 						Envoy::Config::Core::V3::Address.new(
 							pipe: Envoy::Config::Core::V3::Pipe.new(path: path)
@@ -130,22 +80,11 @@ module Async
 					end
 				end
 				
-				private_class_method :build_address
-				
-				# Convert seconds to a protobuf duration.
-				# @parameter seconds [Numeric] The duration in seconds.
-				# @returns [Google::Protobuf::Duration] The protobuf duration.
-				def self.duration(seconds)
-					whole_seconds = seconds.to_i
-					nanos = ((seconds.to_f - whole_seconds) * 1_000_000_000).to_i
-					
-					Google::Protobuf::Duration.new(seconds: whole_seconds, nanos: nanos)
-				end
-				
 				# Convert an endpoint health status to its Envoy enum value.
 				# @parameter healthy [Boolean | Symbol | String] The normalized health status.
 				# @returns [Integer] The Envoy health-status enum value.
-				def self.health_status_value(healthy)
+				# @private
+				def health_status_value(healthy)
 					case healthy
 					when :healthy, :HEALTHY, "healthy", "HEALTHY", true
 						Envoy::Config::Core::V3::HealthStatus::HEALTHY

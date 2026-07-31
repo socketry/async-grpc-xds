@@ -3,7 +3,8 @@
 # Released under the MIT License.
 # Copyright, 2026, by Samuel Williams.
 
-require "async/grpc/xds/resource_builder"
+require "async/grpc/xds/cluster"
+require "async/grpc/xds/endpoint"
 require "async/grpc/xds/resources"
 
 describe Async::GRPC::XDS::Resources::Cluster do
@@ -62,7 +63,7 @@ describe Async::GRPC::XDS::Resources::Cluster do
 	end
 	
 	it "parses protobuf cluster data" do
-		protobuf = Async::GRPC::XDS::ResourceBuilder.cluster("myservice")
+		protobuf = Async::GRPC::XDS::Cluster.build("myservice")
 		cluster = subject.from_proto(protobuf)
 		
 		expect(cluster.name).to be == "myservice"
@@ -72,7 +73,7 @@ describe Async::GRPC::XDS::Resources::Cluster do
 	end
 	
 	it "parses protobuf health checks" do
-		protobuf = Async::GRPC::XDS::ResourceBuilder.cluster("myservice")
+		protobuf = Async::GRPC::XDS::Cluster.build("myservice")
 		protobuf.health_checks << Envoy::Config::Core::V3::HealthCheck.new(
 			timeout: Google::Protobuf::Duration.new(seconds: 1, nanos: 500_000_000),
 			interval: Google::Protobuf::Duration.new(seconds: 10),
@@ -87,7 +88,7 @@ describe Async::GRPC::XDS::Resources::Cluster do
 	end
 	
 	it "parses protobuf gRPC and TCP health checks" do
-		protobuf = Async::GRPC::XDS::ResourceBuilder.cluster("myservice")
+		protobuf = Async::GRPC::XDS::Cluster.build("myservice")
 		protobuf.health_checks << Envoy::Config::Core::V3::HealthCheck.new(
 			grpc_health_check: Envoy::Config::Core::V3::HealthCheck::GrpcHealthCheck.new
 		)
@@ -170,7 +171,7 @@ describe Async::GRPC::XDS::Resources::ClusterLoadAssignment do
 	end
 	
 	it "parses protobuf endpoint assignments" do
-		protobuf = Async::GRPC::XDS::ResourceBuilder.cluster_load_assignment(
+		protobuf = Async::GRPC::XDS::Endpoint.build(
 			"myservice",
 			[
 				{addresses: [{address: "127.0.0.1", port: 50051}], healthy: true},

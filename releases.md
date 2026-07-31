@@ -4,6 +4,7 @@
 
   - Add ORCA load reporting messages, service interface, and client-side weighted-round-robin resources.
   - Support endpoint hostnames in generated EDS resources.
+  - Replace the general resource builder with focused cluster and endpoint builders.
 
 ## v0.1.0
 
