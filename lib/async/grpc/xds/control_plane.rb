@@ -10,16 +10,19 @@ require "async/queue"
 
 require "envoy/config/core/v3/base_pb"
 require "envoy/service/discovery/v3/discovery_pb"
+require "google/protobuf/any_pb"
+require "google/protobuf/well_known_types"
 
-require_relative "resource_builder"
+require_relative "cluster"
+require_relative "endpoint"
 
 module Async
 	module GRPC
 		module XDS
 			# Maintains xDS resource snapshots and notifies ADS streams when resources change.
 			class ControlPlane
-				CLUSTER_TYPE = ResourceBuilder::CLUSTER_TYPE
-				ENDPOINT_TYPE = ResourceBuilder::ENDPOINT_TYPE
+				CLUSTER_TYPE = Cluster::TYPE_URL
+				ENDPOINT_TYPE = Endpoint::TYPE_URL
 				
 				# Initialize an empty control plane.
 				# @parameter identifier [String] The identifier reported in discovery responses.
@@ -36,9 +39,9 @@ module Async
 				# Add or replace a cluster resource.
 				# @parameter name [String] The cluster name.
 				# @parameter resource [Envoy::Config::Cluster::V3::Cluster | Nil] An existing cluster resource, or `nil` to build one from `options`.
-				# @parameter options [Hash] Options forwarded to {ResourceBuilder.cluster}.
+				# @parameter options [Hash] Options forwarded to {Cluster.build}.
 				def update_cluster(name, resource = nil, **options)
-					resource ||= ResourceBuilder.cluster(name, **options)
+					resource ||= Cluster.build(name, **options)
 					update_resource(CLUSTER_TYPE, name.to_s, resource)
 				end
 				
@@ -49,7 +52,7 @@ module Async
 					update_resource(
 						ENDPOINT_TYPE,
 						cluster_name.to_s,
-						ResourceBuilder.cluster_load_assignment(cluster_name, endpoints)
+						Endpoint.build(cluster_name, endpoints)
 					)
 				end
 				
@@ -141,7 +144,7 @@ module Async
 					
 					Envoy::Service::Discovery::V3::DiscoveryResponse.new(
 						version_info: version,
-						resources: resources.map{|resource| ResourceBuilder.pack(resource)},
+						resources: resources.map{|resource| Google::Protobuf::Any.pack(resource)},
 						type_url: type_url,
 						nonce: "#{type_url}:#{version}:#{SecureRandom.hex(8)}",
 						control_plane: Envoy::Config::Core::V3::ControlPlane.new(identifier: @identifier)
