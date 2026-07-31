@@ -1,6 +1,6 @@
 # Releases
 
-## Unreleased
+## v0.2.0
 
   - Add ORCA load reporting messages, service interface, and client-side weighted-round-robin resources.
   - Support endpoint hostnames in generated EDS resources.
