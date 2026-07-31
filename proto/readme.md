@@ -15,6 +15,9 @@ These files come from [envoyproxy/data-plane-api](https://github.com/envoyproxy/
 - `envoy/config/route/v3/` - Route definitions (RDS)
 - `envoy/config/core/v3/` - Core types (Node, Address, etc.)
 - `envoy/extensions/transport_sockets/tls/v3/` - TLS/Secret definitions (SDS)
+- `envoy/extensions/load_balancing_policies/` - Typed load-balancing policy definitions
+- `xds/data/orca/v3/` - ORCA load reports
+- `xds/service/orca/v3/` - Out-of-band ORCA reporting service
 - `google/protobuf/` - Google protobuf well-known types
 
 ## Updating

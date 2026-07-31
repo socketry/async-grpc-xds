@@ -5,6 +5,7 @@
 
 require "google/protobuf/any_pb"
 require "google/protobuf/duration_pb"
+require "google/protobuf/wrappers_pb"
 
 require "envoy/config/cluster/v3/cluster_pb"
 require "envoy/config/core/v3/address_pb"
@@ -13,6 +14,7 @@ require "envoy/config/core/v3/health_check_pb"
 require "envoy/config/core/v3/protocol_pb"
 require "envoy/config/endpoint/v3/endpoint_pb"
 require "envoy/config/endpoint/v3/endpoint_components_pb"
+require "envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin_pb"
 
 module Async
 	module GRPC
@@ -37,12 +39,13 @@ module Async
 				# Build an EDS cluster resource.
 				# @parameter name [String] The cluster name.
 				# @parameter service_name [String] The EDS service name.
-				# @parameter load_balancer_policy [Symbol] The Envoy load-balancing policy.
+				# @parameter load_balancer_policy [Symbol] The legacy Envoy load-balancing policy.
+				# @parameter load_balancing_policy [Envoy::Config::Cluster::V3::LoadBalancingPolicy | Nil] The typed Envoy load-balancing policy.
 				# @parameter connect_timeout [Numeric] The upstream connection timeout in seconds.
 				# @parameter protocol [Symbol] The canonical upstream protocol, either `:http1` or `:http2`.
 				# @returns [Envoy::Config::Cluster::V3::Cluster] The generated cluster resource.
 				# @raises [ArgumentError] If the upstream protocol is unsupported.
-				def self.cluster(name, service_name: name, load_balancer_policy: :round_robin, connect_timeout: 5, protocol: :http2)
+				def self.cluster(name, service_name: name, load_balancer_policy: :round_robin, load_balancing_policy: nil, connect_timeout: 5, protocol: :http2)
 					options = {
 						name: name.to_s,
 						type: Envoy::Config::Cluster::V3::Cluster::DiscoveryType::EDS,
@@ -53,8 +56,13 @@ module Async
 							)
 						),
 						connect_timeout: duration(connect_timeout),
-						lb_policy: load_balancer_policy_value(load_balancer_policy),
 					}
+					
+					if load_balancing_policy
+						options[:load_balancing_policy] = load_balancing_policy
+					else
+						options[:lb_policy] = load_balancer_policy_value(load_balancer_policy)
+					end
 					
 					case protocol
 					when :http1
@@ -66,6 +74,31 @@ module Async
 					end
 					
 					Envoy::Config::Cluster::V3::Cluster.new(**options)
+				end
+				
+				# Build the Envoy client-side weighted-round-robin policy with out-of-band ORCA reporting.
+				# @parameter port [Integer] The alternative TCP port hosting the ORCA service.
+				# @parameter reporting_period [Numeric] The requested ORCA reporting interval in seconds.
+				# @returns [Envoy::Config::Cluster::V3::LoadBalancingPolicy] The typed load-balancing policy.
+				def self.client_side_weighted_round_robin(port, reporting_period: 1)
+					configuration = Envoy::Extensions::LoadBalancingPolicies::ClientSideWeightedRoundRobin::V3::ClientSideWeightedRoundRobin.new(
+						enable_oob_load_report: Google::Protobuf::BoolValue.new(value: true),
+						oob_reporting_period: duration(reporting_period),
+						oob_reporting_config: Envoy::Extensions::LoadBalancingPolicies::Common::V3::OrcaOobReportingConfig.new(
+							port_value: Integer(port)
+						)
+					)
+					
+					Envoy::Config::Cluster::V3::LoadBalancingPolicy.new(
+						policies: [
+							Envoy::Config::Cluster::V3::LoadBalancingPolicy::Policy.new(
+								typed_extension_config: Envoy::Config::Core::V3::TypedExtensionConfig.new(
+									name: "envoy.load_balancing_policies.client_side_weighted_round_robin",
+									typed_config: pack(configuration)
+								)
+							)
+						]
+					)
 				end
 				
 				# Build an EDS cluster load assignment from normalized endpoint state.
@@ -97,6 +130,7 @@ module Async
 					Envoy::Config::Endpoint::V3::LbEndpoint.new(
 						endpoint: Envoy::Config::Endpoint::V3::Endpoint.new(
 							address: build_address(address),
+							hostname: endpoint[:hostname],
 							additional_addresses: additional_addresses.map do |additional_address|
 								Envoy::Config::Endpoint::V3::Endpoint::AdditionalAddress.new(
 									address: build_address(additional_address)

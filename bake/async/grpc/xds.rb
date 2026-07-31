@@ -18,6 +18,16 @@ def generate_protos(proto_dir: "proto", output_dir: "lib")
 		"envoy/service/discovery/v3/ads.proto"
 	]
 	
+	orca_files = [
+		"xds/data/orca/v3/orca_load_report.proto",
+		"xds/service/orca/v3/orca.proto",
+		"envoy/config/common/mutation_rules/v3/mutation_rules.proto",
+		"envoy/config/route/v3/route_components.proto",
+		"envoy/type/tracing/v3/custom_tag.proto",
+		"envoy/extensions/load_balancing_policies/common/v3/common.proto",
+		"envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.proto"
+	]
+	
 	# Core config files needed for discovery
 	config_files = [
 		"envoy/config/core/v3/base.proto",
@@ -38,7 +48,7 @@ def generate_protos(proto_dir: "proto", output_dir: "lib")
 		"google/rpc/status.proto"
 	]
 	
-	all_files = discovery_files + config_files + google_files
+	all_files = discovery_files + orca_files + config_files + google_files
 	
 	# Create output directories
 	FileUtils.mkdir_p(output_dir)
