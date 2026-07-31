@@ -37,12 +37,12 @@ module Async
 				# Build an EDS cluster resource.
 				# @parameter name [String] The cluster name.
 				# @parameter service_name [String] The EDS service name.
-				# @parameter load_balancer_policy [Symbol] The Envoy load-balancing policy.
+				# @parameter load_balancing_policy [Envoy::Config::Cluster::V3::LoadBalancingPolicy | Nil] The typed Envoy load-balancing policy.
 				# @parameter connect_timeout [Numeric] The upstream connection timeout in seconds.
 				# @parameter protocol [Symbol] The canonical upstream protocol, either `:http1` or `:http2`.
 				# @returns [Envoy::Config::Cluster::V3::Cluster] The generated cluster resource.
 				# @raises [ArgumentError] If the upstream protocol is unsupported.
-				def self.cluster(name, service_name: name, load_balancer_policy: :round_robin, connect_timeout: 5, protocol: :http2)
+				def self.cluster(name, service_name: name, load_balancing_policy: nil, connect_timeout: 5, protocol: :http2)
 					options = {
 						name: name.to_s,
 						type: Envoy::Config::Cluster::V3::Cluster::DiscoveryType::EDS,
@@ -53,8 +53,9 @@ module Async
 							)
 						),
 						connect_timeout: duration(connect_timeout),
-						lb_policy: load_balancer_policy_value(load_balancer_policy),
 					}
+					
+					options[:load_balancing_policy] = load_balancing_policy if load_balancing_policy
 					
 					case protocol
 					when :http1
@@ -97,6 +98,7 @@ module Async
 					Envoy::Config::Endpoint::V3::LbEndpoint.new(
 						endpoint: Envoy::Config::Endpoint::V3::Endpoint.new(
 							address: build_address(address),
+							hostname: endpoint[:hostname],
 							additional_addresses: additional_addresses.map do |additional_address|
 								Envoy::Config::Endpoint::V3::Endpoint::AdditionalAddress.new(
 									address: build_address(additional_address)
@@ -138,22 +140,6 @@ module Async
 					nanos = ((seconds.to_f - whole_seconds) * 1_000_000_000).to_i
 					
 					Google::Protobuf::Duration.new(seconds: whole_seconds, nanos: nanos)
-				end
-				
-				# Convert a load-balancer policy name to its Envoy enum value.
-				# @parameter load_balancer_policy [Symbol | String | Integer] The load-balancer policy.
-				# @returns [Integer] The Envoy load-balancer policy enum value.
-				def self.load_balancer_policy_value(load_balancer_policy)
-					case load_balancer_policy
-					when :round_robin, :ROUND_ROBIN, "round_robin", "ROUND_ROBIN"
-						Envoy::Config::Cluster::V3::Cluster::LbPolicy::ROUND_ROBIN
-					when :least_request, :LEAST_REQUEST, "least_request", "LEAST_REQUEST"
-						Envoy::Config::Cluster::V3::Cluster::LbPolicy::LEAST_REQUEST
-					when :random, :RANDOM, "random", "RANDOM"
-						Envoy::Config::Cluster::V3::Cluster::LbPolicy::RANDOM
-					else
-						load_balancer_policy
-					end
 				end
 				
 				# Convert an endpoint health status to its Envoy enum value.

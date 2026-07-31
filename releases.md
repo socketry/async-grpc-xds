@@ -1,5 +1,10 @@
 # Releases
 
+## Unreleased
+
+  - Add ORCA load reporting messages, service interface, and client-side weighted-round-robin resources.
+  - Support endpoint hostnames in generated EDS resources.
+
 ## v0.1.0
 
   - Add complete documentation coverage for the public xDS API.
