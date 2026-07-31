@@ -4,9 +4,9 @@
 # Copyright, 2026, by Samuel Williams.
 
 require "async/grpc/xds/resource_builder"
-require "async/grpc/xds/resources/client_side_weighted_round_robin"
+require "async/grpc/xds/client_side_weighted_round_robin"
 
-describe Async::GRPC::XDS::Resources::ClientSideWeightedRoundRobin do
+describe Async::GRPC::XDS::ClientSideWeightedRoundRobin do
 	it "builds a typed load-balancing policy" do
 		policy = subject.build(18000, reporting_period: 2.5)
 		cluster = Async::GRPC::XDS::ResourceBuilder.cluster("myservice", load_balancing_policy: policy)
