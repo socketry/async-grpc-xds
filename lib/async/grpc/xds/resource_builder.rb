@@ -5,7 +5,6 @@
 
 require "google/protobuf/any_pb"
 require "google/protobuf/duration_pb"
-require "google/protobuf/wrappers_pb"
 
 require "envoy/config/cluster/v3/cluster_pb"
 require "envoy/config/core/v3/address_pb"
@@ -14,7 +13,6 @@ require "envoy/config/core/v3/health_check_pb"
 require "envoy/config/core/v3/protocol_pb"
 require "envoy/config/endpoint/v3/endpoint_pb"
 require "envoy/config/endpoint/v3/endpoint_components_pb"
-require "envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin_pb"
 
 module Async
 	module GRPC
@@ -69,31 +67,6 @@ module Async
 					end
 					
 					Envoy::Config::Cluster::V3::Cluster.new(**options)
-				end
-				
-				# Build the Envoy client-side weighted-round-robin policy with out-of-band ORCA reporting.
-				# @parameter port [Integer] The alternative TCP port hosting the ORCA service.
-				# @parameter reporting_period [Numeric] The requested ORCA reporting interval in seconds.
-				# @returns [Envoy::Config::Cluster::V3::LoadBalancingPolicy] The typed load-balancing policy.
-				def self.client_side_weighted_round_robin(port, reporting_period: 1)
-					configuration = Envoy::Extensions::LoadBalancingPolicies::ClientSideWeightedRoundRobin::V3::ClientSideWeightedRoundRobin.new(
-						enable_oob_load_report: Google::Protobuf::BoolValue.new(value: true),
-						oob_reporting_period: duration(reporting_period),
-						oob_reporting_config: Envoy::Extensions::LoadBalancingPolicies::Common::V3::OrcaOobReportingConfig.new(
-							port_value: Integer(port)
-						)
-					)
-					
-					Envoy::Config::Cluster::V3::LoadBalancingPolicy.new(
-						policies: [
-							Envoy::Config::Cluster::V3::LoadBalancingPolicy::Policy.new(
-								typed_extension_config: Envoy::Config::Core::V3::TypedExtensionConfig.new(
-									name: "envoy.load_balancing_policies.client_side_weighted_round_robin",
-									typed_config: pack(configuration)
-								)
-							)
-						]
-					)
 				end
 				
 				# Build an EDS cluster load assignment from normalized endpoint state.

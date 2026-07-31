@@ -25,23 +25,6 @@ describe Async::GRPC::XDS::ResourceBuilder do
 		expect(cluster.http2_protocol_options).to be == nil
 	end
 	
-	it "builds a client-side weighted-round-robin cluster" do
-		policy = subject.client_side_weighted_round_robin(18000, reporting_period: 2.5)
-		cluster = subject.cluster("myservice", load_balancing_policy: policy)
-		
-		typed_configuration = cluster.load_balancing_policy.policies.first.typed_extension_config
-		configuration = Envoy::Extensions::LoadBalancingPolicies::ClientSideWeightedRoundRobin::V3::ClientSideWeightedRoundRobin.decode(
-			typed_configuration.typed_config.value
-		)
-		
-		expect(cluster.lb_policy).to be == :ROUND_ROBIN
-		expect(typed_configuration.name).to be == "envoy.load_balancing_policies.client_side_weighted_round_robin"
-		expect(configuration.enable_oob_load_report.value).to be == true
-		expect(configuration.oob_reporting_period.seconds).to be == 2
-		expect(configuration.oob_reporting_period.nanos).to be == 500_000_000
-		expect(configuration.oob_reporting_config.port_value).to be == 18000
-	end
-	
 	it "packs resources using their protobuf type URL" do
 		cluster = subject.cluster("myservice")
 		resource = subject.pack(cluster)
