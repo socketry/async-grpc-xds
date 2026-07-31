@@ -62,12 +62,12 @@ describe Async::GRPC::XDS::Resources::Cluster do
 	end
 	
 	it "parses protobuf cluster data" do
-		protobuf = Async::GRPC::XDS::ResourceBuilder.cluster("myservice", load_balancer_policy: :least_request)
+		protobuf = Async::GRPC::XDS::ResourceBuilder.cluster("myservice")
 		cluster = subject.from_proto(protobuf)
 		
 		expect(cluster.name).to be == "myservice"
 		expect(cluster.type).to be == :EDS
-		expect(cluster.load_balancer_policy).to be == :LEAST_REQUEST
+		expect(cluster.load_balancer_policy).to be == :ROUND_ROBIN
 		expect(cluster).to be(:eds_cluster?)
 	end
 	
