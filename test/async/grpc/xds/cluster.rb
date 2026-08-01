@@ -4,6 +4,7 @@
 # Copyright, 2026, by Samuel Williams.
 
 require "async/grpc/xds/cluster"
+require "async/grpc/xds/http_health_check"
 
 describe Async::GRPC::XDS::Cluster do
 	it "builds an EDS cluster resource" do
@@ -23,6 +24,13 @@ describe Async::GRPC::XDS::Cluster do
 		cluster = subject.build("myservice", protocol: :http1)
 		
 		expect(cluster.http2_protocol_options).to be == nil
+	end
+	
+	it "attaches active health checks" do
+		health_check = Async::GRPC::XDS::HTTPHealthCheck.build("/services/ping")
+		cluster = subject.build("myservice", health_checks: [health_check])
+		
+		expect(cluster.health_checks).to be == [health_check]
 	end
 	
 	it "rejects unsupported upstream protocols" do
