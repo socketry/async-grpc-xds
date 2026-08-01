@@ -1,6 +1,6 @@
 # Releases
 
-## Unreleased
+## v0.3.0
 
   - Add Envoy HTTP active health-check resources and attach health checks to generated clusters.
 

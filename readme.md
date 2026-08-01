@@ -26,6 +26,10 @@ docker compose -f xds/docker-compose.yaml up --build --exit-code-from tests
 
 Please see the [project releases](https://socketry.github.io/async-grpc-xds/releases/index) for all releases.
 
+### v0.3.0
+
+  - Add Envoy HTTP active health-check resources and attach health checks to generated clusters.
+
 ### v0.2.0
 
   - Add ORCA load reporting messages, service interface, and client-side weighted-round-robin resources.
