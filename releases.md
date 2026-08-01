@@ -1,5 +1,9 @@
 # Releases
 
+## Unreleased
+
+  - Add Envoy HTTP active health-check resources and attach health checks to generated clusters.
+
 ## v0.2.0
 
   - Add ORCA load reporting messages, service interface, and client-side weighted-round-robin resources.

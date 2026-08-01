@@ -22,11 +22,12 @@ module Async
 				# @parameter name [String] The cluster name.
 				# @parameter service_name [String] The EDS service name.
 				# @parameter load_balancing_policy [Envoy::Config::Cluster::V3::LoadBalancingPolicy | Nil] The typed Envoy load-balancing policy.
+				# @parameter health_checks [Array(Envoy::Config::Core::V3::HealthCheck)] The active health checks applied to cluster endpoints.
 				# @parameter connect_timeout [Numeric] The upstream connection timeout in seconds.
 				# @parameter protocol [Symbol] The canonical upstream protocol, either `:http1` or `:http2`.
 				# @returns [Envoy::Config::Cluster::V3::Cluster] The generated cluster resource.
 				# @raises [ArgumentError] If the upstream protocol is unsupported.
-				def build(name, service_name: name, load_balancing_policy: nil, connect_timeout: 5, protocol: :http2)
+				def build(name, service_name: name, load_balancing_policy: nil, health_checks: [], connect_timeout: 5, protocol: :http2)
 					options = {
 						name: name.to_s,
 						type: Envoy::Config::Cluster::V3::Cluster::DiscoveryType::EDS,
@@ -37,6 +38,7 @@ module Async
 							)
 						),
 						connect_timeout: duration(connect_timeout),
+						health_checks: health_checks,
 					}
 					
 					options[:load_balancing_policy] = load_balancing_policy if load_balancing_policy
