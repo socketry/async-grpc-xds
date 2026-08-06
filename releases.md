@@ -4,7 +4,6 @@
 
   - Add dedicated Cluster Discovery Service and Endpoint Discovery Service implementations, allowing resource-specific xDS streams without claiming ADS.
   - Allow generated clusters to use a dedicated EDS configuration source instead of ADS.
-  - Add a guide covering control-plane setup, Envoy bootstrap configuration, resource updates, and Ruby client usage.
 
 ## v0.3.0
 
