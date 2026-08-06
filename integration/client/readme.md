@@ -1,4 +1,4 @@
-# xDS Integration Tests
+# xDS Client Integration Test
 
 This directory contains Docker Compose configuration and test files for xDS integration testing, following the same pattern as `async-redis` (Sentinel and Cluster tests).
 
@@ -14,13 +14,13 @@ The Docker Compose setup includes:
 From this directory:
 
 ```bash
-cd xds
+cd integration/client
 docker compose up --build --exit-code-from tests
 ```
 
 ## Test Structure
 
-Tests are located in `xds/test/async/grpc/xds/` and follow the same pattern as other async-grpc tests:
+Tests are located in `integration/client/test/async/grpc/xds/` and follow the same pattern as other async-grpc tests:
 
 - `client.rb`: Tests for `Async::GRPC::XDS::Client`
 - Tests use `Sus::Fixtures::Async::ReactorContext` for async test support

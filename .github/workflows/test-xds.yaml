@@ -31,6 +31,14 @@ jobs:
 
     - name: Run tests
       timeout-minutes: 10
+      working-directory: integration/client
       env:
         RUBY_VERSION: ${{matrix.ruby}}
-      run: docker compose -f xds/docker-compose.yaml up --build --exit-code-from tests
+      run: docker compose up --build --exit-code-from tests
+
+    - name: Test dedicated discovery services with Envoy
+      timeout-minutes: 10
+      working-directory: integration/envoy
+      env:
+        RUBY_VERSION: ${{matrix.ruby}}
+      run: docker compose up --build --exit-code-from tests
