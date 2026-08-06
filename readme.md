@@ -10,17 +10,7 @@ This gem contains the experimental xDS implementation extracted from `async-grpc
 
 Please see the [project documentation](https://socketry.github.io/async-grpc-xds/) for more details.
 
-By default, {ruby Async::GRPC::XDS::Server} serves the Aggregated Discovery Service. To expose dedicated CDS and EDS streams while leaving ADS available to another control plane, select the resource-specific services:
-
-``` ruby
-server = Async::GRPC::XDS::Server.new(
-	control_plane,
-	services: [
-		Async::GRPC::XDS::ClusterDiscoveryService,
-		Async::GRPC::XDS::EndpointDiscoveryService,
-	]
-)
-```
+  - [Getting Started](https://socketry.github.io/async-grpc-xds/guides/getting-started/index) - This guide explains how to use `async-grpc-xds` to publish CDS and EDS resources to Envoy, or to discover gRPC backends from Ruby using xDS.
 
 ## Status
 
