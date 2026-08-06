@@ -21,7 +21,7 @@ module Async
 					@control_plane = control_plane
 					@output = output
 					@resource_type = resource_type
-					@subscriptions = Hash.new{|hash, type_url| hash[type_url] = Set.new}
+					@subscriptions = {}
 					@versions = {}
 					@queue = Async::Queue.new
 					@closed = false
@@ -50,10 +50,10 @@ module Async
 						return
 					end
 					
-					if request.resource_names.any?
-						@subscriptions[type_url].merge(request.resource_names)
-					else
-						@subscriptions[type_url]
+					names = Set.new(request.resource_names)
+					if @subscriptions[type_url] != names
+						@subscriptions[type_url] = names
+						@versions.delete(type_url)
 					end
 					
 					@queue << type_url
@@ -63,6 +63,7 @@ module Async
 				# @parameter type_url [String] The changed xDS resource type URL.
 				def changed(type_url)
 					return if @resource_type && type_url != @resource_type
+					return unless @subscriptions.key?(type_url)
 					
 					@queue << type_url unless @closed
 				end
