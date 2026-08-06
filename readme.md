@@ -12,10 +12,6 @@ Please see the [project documentation](https://socketry.github.io/async-grpc-xds
 
   - [Getting Started](https://socketry.github.io/async-grpc-xds/guides/getting-started/index) - This guide explains how to use `async-grpc-xds` to publish CDS and EDS resources to Envoy, or to discover gRPC backends from Ruby using xDS.
 
-## Status
-
-This is an early implementation focused on CDS and EDS over ADS or dedicated discovery streams. LDS/RDS, full routing semantics, NACK handling, locality weighting, and delta xDS are not complete yet.
-
 ## Testing
 
 The `xds/` directory contains a Docker Compose integration environment with a Go xDS control plane and Ruby gRPC backends.
