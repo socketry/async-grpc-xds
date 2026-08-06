@@ -28,7 +28,7 @@ describe Async::GRPC::XDS::DiscoveryService do
 	end
 	
 	def stream_for(resource_type, output)
-		subject::Stream.new(control_plane, output, resource_type: resource_type)
+		Async::GRPC::XDS::Stream.new(control_plane, output, resource_type: resource_type)
 	end
 	
 	it "serves clusters with an explicit resource type" do
@@ -63,7 +63,7 @@ describe Async::GRPC::XDS::DiscoveryService do
 	
 	it "requires a resource type for aggregated streams" do
 		responses = output
-		stream = subject::Stream.new(control_plane, responses)
+		stream = Async::GRPC::XDS::Stream.new(control_plane, responses)
 		
 		stream.request(request)
 		
@@ -171,7 +171,7 @@ describe Async::GRPC::XDS::DiscoveryService do
 			end
 		end
 		
-		mock(subject::Stream) do |stream_mock|
+		mock(Async::GRPC::XDS::Stream) do |stream_mock|
 			stream_mock.replace(:new) do |given_control_plane, given_output, resource_type:|
 				expect(given_control_plane).to be == control_plane
 				expect(given_output).to be == output

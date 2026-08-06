@@ -152,7 +152,7 @@ module Async
 				end
 				
 				# Register a stream to receive resource-change notifications.
-				# @parameter stream [DiscoveryService::Stream] The stream to register.
+				# @parameter stream [Stream] The stream to register.
 				def register_stream(stream)
 					@mutex.synchronize do
 						@streams.add(stream)
@@ -160,7 +160,7 @@ module Async
 				end
 				
 				# Remove a registered stream.
-				# @parameter stream [DiscoveryService::Stream] The stream to remove.
+				# @parameter stream [Stream] The stream to remove.
 				def remove_stream(stream)
 					@mutex.synchronize do
 						@streams.delete(stream)
