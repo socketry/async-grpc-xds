@@ -17,8 +17,7 @@ Please see the [project documentation](https://socketry.github.io/async-grpc-xds
 The `integration/` directory contains Docker Compose environments for testing the Ruby xDS client against a Go control plane and the Ruby control plane against Envoy.
 
 ``` bash
-cd integration/client
-docker compose up --build --exit-code-from tests
+bundle exec bake test:integration
 ```
 
 ## Releases

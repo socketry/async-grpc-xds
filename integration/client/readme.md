@@ -11,11 +11,10 @@ The Docker Compose setup includes:
 
 ## Running Tests
 
-From this directory:
+From the project root:
 
 ```bash
-cd integration/client
-docker compose up --build --exit-code-from tests
+bundle exec bake test:integration name=client
 ```
 
 ## Test Structure
