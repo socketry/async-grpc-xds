@@ -7,15 +7,11 @@ require "async/grpc/xds/cluster_discovery_service"
 require "async/grpc/xds/endpoint_discovery_service"
 require "async/grpc/xds/server"
 require "async/grpc/xds/service"
-require "async/notification"
 require "envoy/config/cluster/v3/cluster_pb"
 require "envoy/config/endpoint/v3/endpoint_pb"
 require "google/rpc/status_pb"
-require "sus/fixtures/async"
 
 describe Async::GRPC::XDS::DiscoveryService do
-	include Sus::Fixtures::Async::ReactorContext
-	
 	let(:control_plane) {Async::GRPC::XDS::ControlPlane.new}
 	
 	def output
@@ -135,27 +131,68 @@ describe Async::GRPC::XDS::DiscoveryService do
 		stream&.close
 	end
 	
-	it "serves endpoint requests through the dedicated discovery stream" do
+	it "delivers queued resource changes" do
 		control_plane.update_endpoints("myservice", [
 			{addresses: [{address: "127.0.0.1", port: 50051}], healthy: true}
 		])
-		service = Async::GRPC::XDS::EndpointDiscoveryService.new(control_plane)
-		request = self.request
-		responses = []
-		response_written = Async::Notification.new
-		input = Object.new
-		input.define_singleton_method(:each) do |&block|
-			block.call(request)
-			response_written.wait
-		end
+		responses = output
+		stream = stream_for(Async::GRPC::XDS::ControlPlane::ENDPOINT_TYPE, responses)
+		stream.request(request)
+		
 		responses.define_singleton_method(:write) do |response|
 			self << response
-			response_written.signal
+			stream.close
 		end
 		
-		service.stream_endpoints(input, responses, nil)
+		stream.run
 		
 		expect(responses.first.type_url).to be == Async::GRPC::XDS::ControlPlane::ENDPOINT_TYPE
+	ensure
+		stream&.close
+	end
+	
+	it "coordinates endpoint discovery stream tasks" do
+		service = Async::GRPC::XDS::EndpointDiscoveryService.new(control_plane)
+		input = [request]
+		output = Object.new
+		events = []
+		stream = Object.new
+		stream.define_singleton_method(:request){|request| events << [:request, request]}
+		stream.define_singleton_method(:run){events << :run}
+		stream.define_singleton_method(:close){events << :close}
+		
+		task = Object.new
+		task.define_singleton_method(:async) do |&block|
+			block.call
+			
+			Object.new.tap do |handle|
+				handle.define_singleton_method(:wait){events << :wait}
+				handle.define_singleton_method(:stop){events << :stop}
+			end
+		end
+		
+		mock(subject::Stream) do |stream_mock|
+			stream_mock.replace(:new) do |given_control_plane, given_output, resource_type:|
+				expect(given_control_plane).to be == control_plane
+				expect(given_output).to be == output
+				expect(resource_type).to be == Async::GRPC::XDS::ControlPlane::ENDPOINT_TYPE
+				stream
+			end
+			
+			mock(Async::Task) do |task_mock|
+				task_mock.replace(:current){task}
+				service.stream_endpoints(input, output, nil)
+			end
+		end
+		
+		expect(events).to be == [
+			[:request, input.first],
+			:run,
+			:wait,
+			:close,
+			:stop,
+			:stop,
+		]
 	end
 	
 	it "delegates cluster requests to the discovery stream" do
