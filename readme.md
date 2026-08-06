@@ -2,7 +2,7 @@
 
 xDS support for `async-grpc` clients.
 
-This gem contains the experimental xDS implementation extracted from `async-grpc`, including Envoy xDS protobuf definitions, ADS discovery, CDS/EDS resource handling, and client-side load balancing.
+This gem contains the experimental xDS implementation extracted from `async-grpc`, including Envoy xDS protobuf definitions, aggregated and resource-specific discovery, CDS/EDS resource handling, and client-side load balancing.
 
 [![Development Status](https://github.com/socketry/async-grpc-xds/workflows/Test/badge.svg)](https://github.com/socketry/async-grpc-xds/actions?workflow=Test)
 
@@ -10,9 +10,21 @@ This gem contains the experimental xDS implementation extracted from `async-grpc
 
 Please see the [project documentation](https://socketry.github.io/async-grpc-xds/) for more details.
 
+By default, {ruby Async::GRPC::XDS::Server} serves the Aggregated Discovery Service. To expose dedicated CDS and EDS streams while leaving ADS available to another control plane, select the resource-specific services:
+
+``` ruby
+server = Async::GRPC::XDS::Server.new(
+	control_plane,
+	services: [
+		Async::GRPC::XDS::ClusterDiscoveryService,
+		Async::GRPC::XDS::EndpointDiscoveryService,
+	]
+)
+```
+
 ## Status
 
-This is an early implementation focused on ADS with CDS and EDS. LDS/RDS, full routing semantics, NACK handling, locality weighting, and delta xDS are not complete yet.
+This is an early implementation focused on CDS and EDS over ADS or dedicated discovery streams. LDS/RDS, full routing semantics, NACK handling, locality weighting, and delta xDS are not complete yet.
 
 ## Testing
 

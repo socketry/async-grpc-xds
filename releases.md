@@ -1,5 +1,10 @@
 # Releases
 
+## Unreleased
+
+  - Add dedicated Cluster Discovery Service and Endpoint Discovery Service implementations, allowing resource-specific xDS streams without claiming ADS.
+  - Allow generated clusters to use a dedicated EDS configuration source instead of ADS.
+
 ## v0.3.0
 
   - Add Envoy HTTP active health-check resources and attach health checks to generated clusters.

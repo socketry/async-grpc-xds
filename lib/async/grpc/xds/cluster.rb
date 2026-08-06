@@ -6,8 +6,9 @@
 require "google/protobuf/duration_pb"
 
 require "envoy/config/cluster/v3/cluster_pb"
-require "envoy/config/core/v3/config_source_pb"
 require "envoy/config/core/v3/protocol_pb"
+
+require_relative "config_source"
 
 module Async
 	module GRPC
@@ -21,21 +22,20 @@ module Async
 				# Build an EDS cluster resource.
 				# @parameter name [String] The cluster name.
 				# @parameter service_name [String] The EDS service name.
+				# @parameter eds_config [Envoy::Config::Core::V3::ConfigSource] The source used to discover endpoint assignments.
 				# @parameter load_balancing_policy [Envoy::Config::Cluster::V3::LoadBalancingPolicy | Nil] The typed Envoy load-balancing policy.
 				# @parameter health_checks [Array(Envoy::Config::Core::V3::HealthCheck)] The active health checks applied to cluster endpoints.
 				# @parameter connect_timeout [Numeric] The upstream connection timeout in seconds.
 				# @parameter protocol [Symbol] The canonical upstream protocol, either `:http1` or `:http2`.
 				# @returns [Envoy::Config::Cluster::V3::Cluster] The generated cluster resource.
 				# @raises [ArgumentError] If the upstream protocol is unsupported.
-				def build(name, service_name: name, load_balancing_policy: nil, health_checks: [], connect_timeout: 5, protocol: :http2)
+				def build(name, service_name: name, eds_config: ConfigSource.ads, load_balancing_policy: nil, health_checks: [], connect_timeout: 5, protocol: :http2)
 					options = {
 						name: name.to_s,
 						type: Envoy::Config::Cluster::V3::Cluster::DiscoveryType::EDS,
 						eds_cluster_config: Envoy::Config::Cluster::V3::Cluster::EdsClusterConfig.new(
 							service_name: service_name.to_s,
-							eds_config: Envoy::Config::Core::V3::ConfigSource.new(
-								ads: Envoy::Config::Core::V3::AggregatedConfigSource.new
-							)
+							eds_config: eds_config
 						),
 						connect_timeout: duration(connect_timeout),
 						health_checks: health_checks,
