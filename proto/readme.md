@@ -25,45 +25,29 @@ These files come from [envoyproxy/data-plane-api](https://github.com/envoyproxy/
 To update these files, run:
 
 ```bash
-./xds/update_protos.sh
+bundle exec bake update_protos
 ```
 
-Or manually:
-
-```bash
-# Clone envoy data-plane-api
-git clone --depth 1 https://github.com/envoyproxy/data-plane-api.git /tmp/envoy-api
-
-# Copy needed files
-cp -r /tmp/envoy-api/envoy proto/
-cp -r /tmp/envoy-api/google proto/
-
-# Cleanup
-rm -rf /tmp/envoy-api
-```
+This fetches the pinned upstream revisions defined in `bake.rb`, updates the vendored definitions, and regenerates the checked-in Ruby classes.
 
 ## Generating Ruby Code
 
 After updating proto files, generate Ruby classes:
 
 ```bash
-bundle exec bake async:grpc:xds:generate_protos
+bundle exec bake generate_protos
 ```
 
 ## Version
 
-These files are from the latest `main` branch of:
+The source repositories and revisions are defined by `PROTOBUF_SOURCES` in `bake.rb`. They include:
+
 - `envoyproxy/data-plane-api` - Envoy API definitions
 - `protocolbuffers/protobuf` - Google protobuf well-known types
 - `googleapis/api-common-protos` - Google RPC status
-
-To lock to a specific version, modify `xds/update_protos.sh` to check out specific tags:
-
-```bash
-cd /tmp/envoy-api
-git checkout v1.30.0  # Use specific Envoy version
-# Then copy files
-```
+- `cncf/xds` - xDS API definitions
+- `cncf/udpa` - UDPA annotations
+- `envoyproxy/protoc-gen-validate` - Validation annotations
 
 ## Note on Dependencies
 
