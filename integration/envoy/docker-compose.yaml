@@ -1,0 +1,29 @@
+services:
+  tests:
+    image: ruby:${RUBY_VERSION:-latest}
+    volumes:
+      - ../../:/code
+    working_dir: /code
+    command: bash -c "bundle install && bundle exec sus integration/envoy/test.rb"
+    environment:
+      - BUNDLE_GEMFILE=/code/gems.rb
+      - BUNDLE_WITHOUT=maintenance
+      - CONSOLE_OUTPUT=XTerm
+      - COVERAGE=${COVERAGE}
+      - ENVOY_ADMIN_URI=http://envoy:19000
+      - READINESS_BIND=http://0.0.0.0:18001
+      - XDS_BIND=http://0.0.0.0:18000
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "--output", "/dev/null", "http://127.0.0.1:18001/"]
+      interval: 1s
+      timeout: 1s
+      retries: 300
+
+  envoy:
+    image: envoyproxy/envoy:v1.39-latest
+    command: ["envoy", "-c", "/etc/envoy/envoy.yaml", "--log-level", "warning"]
+    volumes:
+      - ./envoy.yaml:/etc/envoy/envoy.yaml:ro
+    depends_on:
+      tests:
+        condition: service_healthy

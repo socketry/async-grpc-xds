@@ -19,9 +19,9 @@ services:
   # Backend gRPC server 1
   backend-1:
     build:
-      context: ..
-      dockerfile: xds/Dockerfile.backend
-    command: bundle exec ruby xds/backend_server.rb
+      context: ../..
+      dockerfile: integration/client/Dockerfile.backend
+    command: bundle exec ruby integration/client/backend_server.rb
     environment:
       - BUNDLE_WITHOUT=maintenance
       - PORT=50051
@@ -36,9 +36,9 @@ services:
   # Backend gRPC server 2
   backend-2:
     build:
-      context: ..
-      dockerfile: xds/Dockerfile.backend
-    command: bundle exec ruby xds/backend_server.rb
+      context: ../..
+      dockerfile: integration/client/Dockerfile.backend
+    command: bundle exec ruby integration/client/backend_server.rb
     environment:
       - BUNDLE_WITHOUT=maintenance
       - PORT=50052
@@ -53,9 +53,9 @@ services:
   # Backend gRPC server 3
   backend-3:
     build:
-      context: ..
-      dockerfile: xds/Dockerfile.backend
-    command: bundle exec ruby xds/backend_server.rb
+      context: ../..
+      dockerfile: integration/client/Dockerfile.backend
+    command: bundle exec ruby integration/client/backend_server.rb
     environment:
       - BUNDLE_WITHOUT=maintenance
       - PORT=50053
@@ -71,9 +71,9 @@ services:
   tests:
     image: ruby:${RUBY_VERSION:-latest}
     volumes:
-      - ../:/code
+      - ../../:/code
     working_dir: /code
-    command: bash -c "bundle install && bundle exec sus xds/test"
+    command: bash -c "bundle install && bundle exec sus integration/client/test"
     environment:
       - BUNDLE_GEMFILE=/code/gems.rb
       - BUNDLE_WITHOUT=maintenance

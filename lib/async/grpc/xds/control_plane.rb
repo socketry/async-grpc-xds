@@ -19,7 +19,7 @@ require_relative "endpoint"
 module Async
 	module GRPC
 		module XDS
-			# Maintains xDS resource snapshots and notifies ADS streams when resources change.
+			# Maintains xDS resource snapshots and notifies discovery streams when resources change.
 			class ControlPlane
 				CLUSTER_TYPE = Cluster::TYPE_URL
 				ENDPOINT_TYPE = Endpoint::TYPE_URL
@@ -152,7 +152,7 @@ module Async
 				end
 				
 				# Register a stream to receive resource-change notifications.
-				# @parameter stream [Service::Stream] The stream to register.
+				# @parameter stream [Stream] The stream to register.
 				def register_stream(stream)
 					@mutex.synchronize do
 						@streams.add(stream)
@@ -160,7 +160,7 @@ module Async
 				end
 				
 				# Remove a registered stream.
-				# @parameter stream [Service::Stream] The stream to remove.
+				# @parameter stream [Stream] The stream to remove.
 				def remove_stream(stream)
 					@mutex.synchronize do
 						@streams.delete(stream)

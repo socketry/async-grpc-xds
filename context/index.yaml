@@ -1,0 +1,12 @@
+# Automatically generated context index for Utopia::Project guides.
+# Do not edit then files in this directory directly, instead edit the guides and then run `bake utopia:project:agent:context:update`.
+---
+description: xDS support for Async::GRPC clients.
+metadata:
+  documentation_uri: https://socketry.github.io/async-grpc-xds/
+  source_code_uri: https://github.com/socketry/async-grpc-xds.git
+files:
+- path: getting-started.md
+  title: Getting Started
+  description: This guide explains how to use `async-grpc-xds` to publish CDS and
+    EDS resources to Envoy, or to discover gRPC backends from Ruby using xDS.

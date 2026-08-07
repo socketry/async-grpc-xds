@@ -2,7 +2,7 @@
 
 xDS support for `async-grpc` clients.
 
-This gem contains the experimental xDS implementation extracted from `async-grpc`, including Envoy xDS protobuf definitions, ADS discovery, CDS/EDS resource handling, and client-side load balancing.
+This gem contains the experimental xDS implementation extracted from `async-grpc`, including Envoy xDS protobuf definitions, aggregated and resource-specific discovery, CDS/EDS resource handling, and client-side load balancing.
 
 [![Development Status](https://github.com/socketry/async-grpc-xds/workflows/Test/badge.svg)](https://github.com/socketry/async-grpc-xds/actions?workflow=Test)
 
@@ -10,16 +10,14 @@ This gem contains the experimental xDS implementation extracted from `async-grpc
 
 Please see the [project documentation](https://socketry.github.io/async-grpc-xds/) for more details.
 
-## Status
-
-This is an early implementation focused on ADS with CDS and EDS. LDS/RDS, full routing semantics, NACK handling, locality weighting, and delta xDS are not complete yet.
+  - [Getting Started](https://socketry.github.io/async-grpc-xds/guides/getting-started/index) - This guide explains how to use `async-grpc-xds` to publish CDS and EDS resources to Envoy, or to discover gRPC backends from Ruby using xDS.
 
 ## Testing
 
-The `xds/` directory contains a Docker Compose integration environment with a Go xDS control plane and Ruby gRPC backends.
+The `integration/` directory contains Docker Compose environments for testing the Ruby xDS client against a Go control plane and the Ruby control plane against Envoy.
 
 ``` bash
-docker compose -f xds/docker-compose.yaml up --build --exit-code-from tests
+bundle exec bake test:integration
 ```
 
 ## Releases

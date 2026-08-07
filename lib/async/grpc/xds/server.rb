@@ -16,16 +16,22 @@ module Async
 			class Server
 				# Initialize an xDS server.
 				# @parameter control_plane [ControlPlane] The control plane to serve.
+				# @parameter services [Array(Class)] The discovery service classes to register.
 				# @parameter options [Hash] Default options forwarded to `Async::HTTP::Server`.
-				def initialize(control_plane = ControlPlane.new, **options)
+				def initialize(control_plane = ControlPlane.new, services: [Service], **options)
 					@control_plane = control_plane
 					@dispatcher = Async::GRPC::Dispatcher.new
-					@dispatcher.register(Service.new(@control_plane))
+					@services = services.map do |service|
+						service.new(@control_plane).tap do |instance|
+							@dispatcher.register(instance)
+						end
+					end
 					@options = options
 				end
 				
 				attr :control_plane
 				attr :dispatcher
+				attr :services
 				
 				# Run the xDS server on an endpoint.
 				# @parameter endpoint [Async::HTTP::Endpoint] The endpoint to bind.

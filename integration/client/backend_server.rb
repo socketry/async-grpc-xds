@@ -9,7 +9,7 @@ require "async/http/server"
 require "async/http/endpoint"
 require "async/grpc/dispatcher"
 require "async/grpc/service"
-require_relative "../fixtures/async/grpc/test_interface"
+require_relative "../../fixtures/async/grpc/test_interface"
 
 class TestBackendService < Async::GRPC::Service
 	def initialize(interface_class, service_name, backend_id)

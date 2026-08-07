@@ -4,6 +4,7 @@
 # Copyright, 2026, by Samuel Williams.
 
 require "async/grpc/xds/cluster"
+require "async/grpc/xds/config_source"
 require "async/grpc/xds/http_health_check"
 
 describe Async::GRPC::XDS::Cluster do
@@ -24,6 +25,16 @@ describe Async::GRPC::XDS::Cluster do
 		cluster = subject.build("myservice", protocol: :http1)
 		
 		expect(cluster.http2_protocol_options).to be == nil
+	end
+	
+	it "uses a dedicated EDS configuration source" do
+		eds_config = Async::GRPC::XDS::ConfigSource.grpc("xds_cluster")
+		cluster = subject.build("myservice", eds_config: eds_config)
+		api_config_source = cluster.eds_cluster_config.eds_config.api_config_source
+		
+		expect(api_config_source.api_type).to be == :GRPC
+		expect(api_config_source.transport_api_version).to be == :V3
+		expect(api_config_source.grpc_services.first.envoy_grpc.cluster_name).to be == "xds_cluster"
 	end
 	
 	it "attaches active health checks" do

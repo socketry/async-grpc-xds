@@ -21,4 +21,4 @@ COPY . .
 EXPOSE ${PORT:-50051}
 
 # Run gRPC server
-CMD bundle exec ruby xds/backend_server.rb
+CMD bundle exec ruby integration/client/backend_server.rb
