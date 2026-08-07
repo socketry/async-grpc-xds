@@ -16,6 +16,8 @@ Gem::Specification.new do |spec|
 	spec.homepage = "https://github.com/socketry/async-grpc-xds"
 	
 	spec.metadata = {
+		"bug_tracker_uri" => "https://github.com/socketry/async-grpc-xds/issues",
+		"changelog_uri" => "https://github.com/socketry/async-grpc-xds/blob/main/releases.md",
 		"documentation_uri" => "https://socketry.github.io/async-grpc-xds/",
 		"source_code_uri" => "https://github.com/socketry/async-grpc-xds.git",
 	}
